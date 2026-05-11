@@ -3,44 +3,27 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAdminContent } from '@/app/context/AdminContentContext';
-
-// Real student images
-import img1 from 'figma:asset/f499eb62d048785a2619bea32d84ae5590777c9a.png';
-import img2 from 'figma:asset/899ac6259f8a5facbd97db994dd8d9f19ef96dc7.png';
-import img3 from 'figma:asset/4952357cace1aebbd97f41d5ac051360e783a4a0.png';
-import img4 from 'figma:asset/07205379ccfee6fd50f196a00b83fa4aeb108daa.png';
-import img5 from 'figma:asset/ff4104f9d0dacce55b555ab0ae1f8cf2cb81ac42.png';
-import img6 from 'figma:asset/3d879f3a62e942f79dcd338df316721297c96370.png';
-import img7 from 'figma:asset/b06823f0b1b05775d3c9cc39ea1140b4a988b0f6.png';
-import img8 from 'figma:asset/2847c7f8af621586a1662f9b6706938d1f7f9f4a.png';
-import img9 from 'figma:asset/a1c1788611d28c3b09d2717382354c2d27d7a2e1.png';
-import img10 from 'figma:asset/0e7c3845b31c3e472341ab5fa1e46a9a62b06671.png';
-// Newest batch
-import img11 from 'figma:asset/a89d1dc4bf7e886543bbca7f09c6e7bf4192f4cb.png';
-import img12 from 'figma:asset/801f7147a5b9cf917f902234803df0281f22b43d.png';
-import img13 from 'figma:asset/ebd7494d2ea9fc8ee8b17fdf82c93a961f557d68.png';
+import { galImg1, galImg2, galImg3, galImg4, galImg5, galImg6, galImg7, galImg8, galImg9, galImg10, galImg11, galImg12, galImg13 } from '@/app/data/staticImages';
 
 interface StudentGalleryProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// Only unique images
-const studentImages = [
-  img12, img3, img8, img11, img5, 
-  img9, img13, img7, img1, img10, 
-  img4, img2, img6
-];
+const staticGalleryImages = [galImg12, galImg3, galImg8, galImg11, galImg5, galImg9, galImg13, galImg7, galImg1, galImg10, galImg4, galImg2, galImg6];
 
 export const StudentGallery = ({ isOpen, onClose }: StudentGalleryProps) => {
   const { t } = useTranslation();
   const { adminContent } = useAdminContent();
   const [columns, setColumns] = useState(1);
 
-  // Merge admin-uploaded images with static Figma images (admin first = newest first)
+  const hiddenIds = adminContent.hiddenGalleryIds || [];
+  const visibleStaticImages = staticGalleryImages.filter((_, idx) => !hiddenIds.includes(idx));
+  
+  // Merge admin-uploaded images with static images (admin first = newest first)
   const allImages = [
     ...(adminContent.galleryImages || []),
-    ...studentImages,
+    ...visibleStaticImages,
   ];
 
   useEffect(() => {

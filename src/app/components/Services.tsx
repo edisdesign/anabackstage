@@ -51,13 +51,20 @@ export const Services = () => {
   const lang = i18n.language.split('-')[0] as 'sr' | 'en' | 'de';
 
   const originalServices = [
-    { name: t('services.makeup_classic'), price: "3500 din", image: classicMakeupImg, gallery: [classicMakeupImg] },
-    { name: t('services.makeup_special'), price: "6000 din", image: specialOccasionImg, gallery: [specialOccasionImg] },
-    { name: t('services.hijab_styling'), price: "3000 din", image: hijabStylingImg, gallery: [hijabStylingImg] },
-    { name: t('services.hair_classic'), price: "1000 - 2000 din", image: classicHairImg, gallery: [classicHairImg] },
-    { name: t('services.hair_special'), price: "2000 - 5000 din", image: specialHairImg, gallery: [specialHairImg] },
-    { name: t('services.hair_waves'), price: "1000 - 2500 din", image: hairWavesImg, gallery: [hairWavesImg] },
+    { key: 'classic_makeup', name: t('services.makeup_classic'), price: "3500 din", image: classicMakeupImg, gallery: [classicMakeupImg] },
+    { key: 'special_makeup', name: t('services.makeup_special'), price: "6000 din", image: specialOccasionImg, gallery: [specialOccasionImg] },
+    { key: 'hijab', name: t('services.hijab_styling'), price: "3000 din", image: hijabStylingImg, gallery: [hijabStylingImg] },
+    { key: 'classic_hair', name: t('services.hair_classic'), price: "1000 - 2000 din", image: classicHairImg, gallery: [classicHairImg] },
+    { key: 'special_hair', name: t('services.hair_special'), price: "2000 - 5000 din", image: specialHairImg, gallery: [specialHairImg] },
+    { key: 'waves', name: t('services.hair_waves'), price: "1000 - 2500 din", image: hairWavesImg, gallery: [hairWavesImg] },
   ];
+
+  const adminPrices = adminContent.servicePrices || {};
+
+  const mappedOriginalServices = originalServices.map(svc => ({
+    ...svc,
+    price: adminPrices[svc.key] || svc.price
+  }));
 
   const adminServices = (adminContent.services || []).map(s => ({
     name: s.name[lang] || s.name.sr || '',
@@ -66,7 +73,7 @@ export const Services = () => {
     gallery: [s.image || classicMakeupImg],
   }));
 
-  const services = [...originalServices, ...adminServices];
+  const services = [...mappedOriginalServices, ...adminServices];
 
   const settings = {
     dots: true,
