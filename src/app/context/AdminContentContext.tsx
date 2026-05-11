@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { BlogPost } from '@/app/data/blogPosts';
 
+export interface LocalizedString {
+  sr: string;
+  en: string;
+  de: string;
+}
+
 export interface HeroContent {
   images: string[];
   subtitle: string;
@@ -12,6 +18,9 @@ export interface HeroContent {
 export interface AdminContent {
   hero: HeroContent;
   blogPosts: BlogPost[];
+  aboutImage: string;
+  aboutBio: LocalizedString;
+  galleryImages: string[];
 }
 
 interface AdminContentContextValue {
@@ -21,17 +30,12 @@ interface AdminContentContextValue {
   isLoaded: boolean;
 }
 
-const defaultHero: HeroContent = {
-  images: [],
-  subtitle: '',
-  title: '',
-  beauty: '',
-  description: '',
-};
-
 const defaultContent: AdminContent = {
-  hero: defaultHero,
+  hero: { images: [], subtitle: '', title: '', beauty: '', description: '' },
   blogPosts: [],
+  aboutImage: '',
+  aboutBio: { sr: '', en: '', de: '' },
+  galleryImages: [],
 };
 
 const AdminContentContext = createContext<AdminContentContextValue>({
@@ -47,25 +51,22 @@ export const AdminContentProvider = ({ children }: { children: React.ReactNode }
 
   const refreshContent = useCallback(async () => {
     try {
-      // Fetch with cache-bust to always get fresh data after admin commits
       const res = await fetch(`/admin-content.json?v=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setAdminContentState({
-          hero: data.hero || defaultHero,
+          hero: data.hero || defaultContent.hero,
           blogPosts: data.blogPosts || [],
+          aboutImage: data.aboutImage || '',
+          aboutBio: data.aboutBio || { sr: '', en: '', de: '' },
+          galleryImages: data.galleryImages || [],
         });
       }
-    } catch {
-      // If fetch fails, use empty defaults (graceful degradation)
-    } finally {
-      setIsLoaded(true);
-    }
+    } catch { /* graceful fallback */ }
+    finally { setIsLoaded(true); }
   }, []);
 
-  useEffect(() => {
-    refreshContent();
-  }, [refreshContent]);
+  useEffect(() => { refreshContent(); }, [refreshContent]);
 
   const setAdminContent = useCallback((content: AdminContent) => {
     setAdminContentState(content);

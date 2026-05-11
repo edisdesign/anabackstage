@@ -6,5 +6,8 @@
     "beauty": "",
     "description": ""
   },
-  "blogPosts": []
+  "blogPosts": [],
+  "aboutImage": "",
+  "aboutBio": { "sr": "", "en": "", "de": "" },
+  "galleryImages": []
 }

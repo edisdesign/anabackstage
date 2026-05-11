@@ -1,11 +1,16 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-// signatureImg removed as it is no longer used
+import { useAdminContent } from '@/app/context/AdminContentContext';
 import aboutImage from 'figma:asset/80744b63060f86bb02770557bc3e94c2efc292fa.png';
 
 export const About = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { adminContent } = useAdminContent();
+
+  const displayImage = adminContent.aboutImage || aboutImage;
+  const lang = i18n.language.split('-')[0] as 'sr' | 'en' | 'de';
+  const adminBio = adminContent.aboutBio?.[lang] || adminContent.aboutBio?.sr || '';
 
   return (
     <section id="about" className="bg-white dark:bg-[#050505] py-[50px] border-b border-black/10 dark:border-white/10 relative transition-colors duration-500 px-[0px]">
@@ -27,7 +32,7 @@ export const About = () => {
               className="relative aspect-[3/4] p-2 border border-black/10 dark:border-white/10"
             >
               <motion.img 
-                src={aboutImage} 
+                src={displayImage} 
                 alt="Ana working backstage" 
                 initial={{ filter: 'grayscale(100%)' }}
                 whileInView={{ filter: 'grayscale(0%)' }}
@@ -55,8 +60,14 @@ export const About = () => {
               </h2>
               
               <div className="space-y-6 text-gray-600 dark:text-gray-400 font-light text-sm md:text-base leading-7 mt-[0px] mr-[0px] mb-[24px] ml-[0px]">
-                <p>{t('about.p1')}</p>
-                <p>{t('about.p2')}</p>
+                {adminBio ? (
+                  <p>{adminBio}</p>
+                ) : (
+                  <>
+                    <p>{t('about.p1')}</p>
+                    <p>{t('about.p2')}</p>
+                  </>
+                )}
               </div>
 
               {/* Quote Section */}

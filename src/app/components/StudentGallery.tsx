@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAdminContent } from '@/app/context/AdminContentContext';
 
 // Real student images
 import img1 from 'figma:asset/f499eb62d048785a2619bea32d84ae5590777c9a.png';
@@ -33,7 +34,14 @@ const studentImages = [
 
 export const StudentGallery = ({ isOpen, onClose }: StudentGalleryProps) => {
   const { t } = useTranslation();
+  const { adminContent } = useAdminContent();
   const [columns, setColumns] = useState(1);
+
+  // Merge admin-uploaded images with static Figma images (admin first = newest first)
+  const allImages = [
+    ...(adminContent.galleryImages || []),
+    ...studentImages,
+  ];
 
   useEffect(() => {
     const updateColumns = () => {
@@ -47,9 +55,8 @@ export const StudentGallery = ({ isOpen, onClose }: StudentGalleryProps) => {
     return () => window.removeEventListener('resize', updateColumns);
   }, []);
 
-  // Distribute images into columns
   const columnImages = Array.from({ length: columns }, (_, i) => 
-    studentImages.filter((_, index) => index % columns === i)
+    allImages.filter((_, index) => index % columns === i)
   );
 
   return (

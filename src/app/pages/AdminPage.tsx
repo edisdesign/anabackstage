@@ -1,52 +1,45 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { commitFile, uploadImage } from '@/lib/githubApi';
-import { useAdminContent, AdminContent, HeroContent } from '@/app/context/AdminContentContext';
+import { useAdminContent, AdminContent, LocalizedString } from '@/app/context/AdminContentContext';
 import { BlogPost } from '@/app/data/blogPosts';
-import { LogOut, Plus, Edit2, Trash2, Save, Image, Eye, EyeOff, Upload, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages } from 'lucide-react';
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'anabackstage2024';
 const SESSION_KEY = 'ab_admin_session';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const generateId = () =>
-  `post-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+// ─── Auto-translate via MyMemory (free, no key) ──────────────────────────────
+async function autoTranslate(text: string, from: string, to: string): Promise<string> {
+  if (!text.trim()) return '';
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
+    );
+    const data = await res.json();
+    return data.responseData?.translatedText || text;
+  } catch { return text; }
+}
 
-const emptyLocalizedString = () => ({ en: '', sr: '', de: '' });
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const generateId = () => `post-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const emptyLS = (): LocalizedString => ({ sr: '', en: '', de: '' });
 const emptyPost = (): BlogPost => ({
-  id: generateId(),
-  image: '',
-  video: '',
+  id: generateId(), image: '', video: '',
   date: new Date().toISOString().split('T')[0],
-  title: emptyLocalizedString(),
-  category: emptyLocalizedString(),
-  content: emptyLocalizedString(),
+  title: emptyLS(), category: emptyLS(), content: emptyLS(),
 });
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
+const Toast = ({ msg, type }: { msg: string; type: 'success' | 'error' | 'info' }) => (
+  <div className={`fixed bottom-6 right-6 z-[9999] border px-5 py-3 text-sm font-medium rounded shadow-xl max-w-sm ${
+    type === 'success' ? 'bg-emerald-900 border-emerald-500 text-emerald-100' :
+    type === 'error' ? 'bg-red-900 border-red-500 text-red-100' :
+    'bg-zinc-800 border-zinc-500 text-zinc-100'
+  }`}>{msg}</div>
+);
 
-const Toast = ({ msg, type }: { msg: string; type: 'success' | 'error' | 'info' }) => {
-  const colors = {
-    success: 'bg-emerald-900 border-emerald-500 text-emerald-100',
-    error: 'bg-red-900 border-red-500 text-red-100',
-    info: 'bg-zinc-800 border-zinc-500 text-zinc-100',
-  };
-  return (
-    <div className={`fixed bottom-6 right-6 z-[9999] border px-5 py-3 text-sm font-medium rounded shadow-xl max-w-xs ${colors[type]}`}>
-      {msg}
-    </div>
-  );
-};
-
-const ImageUploader = ({
-  label,
-  value,
-  onChange,
-  onToast,
-}: {
-  label: string;
-  value: string;
+// ─── Image Uploader ───────────────────────────────────────────────────────────
+const ImageUploader = ({ label, value, onChange, onToast }: {
+  label: string; value: string;
   onChange: (url: string) => void;
   onToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }) => {
@@ -54,24 +47,15 @@ const ImageUploader = ({
   const [uploading, setUploading] = useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    onToast('Uploadujem sliku...', 'info');
-
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploading(true); onToast('Uploadujem...', 'info');
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
       const filename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-      const result = await uploadImage(filename, base64, `Admin: upload slike ${filename}`);
-      if (result.success && result.url) {
-        onChange(result.url);
-        onToast('Slika uspešno upload-ovana!', 'success');
-      } else {
-        // Fallback: use base64 locally (won't persist after deploy but works in dev)
-        onChange(base64);
-        onToast(result.error || 'Upload nije uspeo, koristim lokalni preview', 'error');
-      }
+      const result = await uploadImage(filename, base64, `Admin: upload ${filename}`);
+      onChange(result.success && result.url ? result.url : base64);
+      onToast(result.success ? '✅ Slika uploadovana!' : '⚠️ Lokalni preview (neće biti na sajtu)', result.success ? 'success' : 'error');
       setUploading(false);
     };
     reader.readAsDataURL(file);
@@ -81,149 +65,129 @@ const ImageUploader = ({
     <div className="space-y-2">
       <label className="block text-xs uppercase tracking-widest text-zinc-400">{label}</label>
       <div className="flex gap-2 items-start">
-        <input
-          type="text"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder="URL slike ili upload ispod"
-          className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-        />
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-1 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs rounded transition-colors disabled:opacity-50"
-        >
-          {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-          Upload
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="URL ili upload →"
+          className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+          className="flex items-center gap-1 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs rounded transition-colors disabled:opacity-50">
+          {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Upload
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       </div>
-      {value && (
-        <img src={value} alt="preview" className="h-24 object-cover rounded border border-zinc-700 mt-1" />
-      )}
+      {value && <img src={value} alt="" className="h-20 object-cover rounded border border-zinc-700" />}
     </div>
   );
 };
 
-const LocalizedField = ({
-  label,
-  value,
-  onChange,
-  multiline = false,
-}: {
+// ─── Localized Field with Auto-translate ──────────────────────────────────────
+const LocalizedField = ({ label, value, onChange, multiline = false, onToast }: {
   label: string;
-  value: { en: string; sr: string; de: string };
-  onChange: (v: { en: string; sr: string; de: string }) => void;
+  value: LocalizedString;
+  onChange: (v: LocalizedString) => void;
   multiline?: boolean;
+  onToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }) => {
   const [tab, setTab] = useState<'sr' | 'en' | 'de'>('sr');
-  const tabs = [
-    { key: 'sr', label: 'SR' },
-    { key: 'en', label: 'EN' },
-    { key: 'de', label: 'DE' },
-  ] as const;
+  const [translating, setTranslating] = useState(false);
+
+  const handleAutoTranslate = async () => {
+    if (!value.sr.trim()) { onToast('Upiši tekst na srpskom prvo', 'error'); return; }
+    setTranslating(true);
+    onToast('Prevodim...', 'info');
+    const [en, de] = await Promise.all([
+      autoTranslate(value.sr, 'sr', 'en'),
+      autoTranslate(value.sr, 'sr', 'de'),
+    ]);
+    onChange({ ...value, en, de });
+    onToast('✅ Prevod gotov!', 'success');
+    setTranslating(false);
+  };
+
+  const Input = multiline ? 'textarea' : 'input';
 
   return (
     <div className="space-y-1">
-      <label className="block text-xs uppercase tracking-widest text-zinc-400">{label}</label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs uppercase tracking-widest text-zinc-400">{label}</label>
+        <button type="button" onClick={handleAutoTranslate} disabled={translating}
+          className="flex items-center gap-1 text-[10px] text-[#d4af37] hover:underline disabled:opacity-50">
+          {translating ? <Loader2 size={10} className="animate-spin" /> : <Languages size={10} />}
+          Auto-prevedi EN+DE
+        </button>
+      </div>
       <div className="flex gap-1 mb-1">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`px-3 py-1 text-xs rounded font-bold transition-colors ${
-              tab === t.key ? 'bg-[#d4af37] text-black' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-            }`}
-          >
-            {t.label}
+        {(['sr', 'en', 'de'] as const).map(t => (
+          <button key={t} type="button" onClick={() => setTab(t)}
+            className={`px-3 py-1 text-xs rounded font-bold transition-colors ${tab === t ? 'bg-[#d4af37] text-black' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}>
+            {t.toUpperCase()}
           </button>
         ))}
       </div>
-      {multiline ? (
-        <textarea
-          value={value[tab]}
-          onChange={e => onChange({ ...value, [tab]: e.target.value })}
-          rows={8}
-          className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37] resize-y"
-        />
-      ) : (
-        <input
-          type="text"
-          value={value[tab]}
-          onChange={e => onChange({ ...value, [tab]: e.target.value })}
-          className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-        />
+      <Input value={value[tab]} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange({ ...value, [tab]: e.target.value })}
+        {...(multiline ? { rows: 7 } : {})}
+        className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37] resize-y" />
+      {tab === 'sr' && value.en && (
+        <p className="text-[10px] text-zinc-500 mt-1">EN: {value.en.slice(0, 80)}{value.en.length > 80 ? '...' : ''}</p>
       )}
     </div>
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
+type Tab = 'hero' | 'omeni' | 'galerija' | 'blog';
 
 export const AdminPage = () => {
-  const { adminContent, setAdminContent, refreshContent } = useAdminContent();
+  const { adminContent, setAdminContent } = useAdminContent();
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === '1');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [activeTab, setActiveTab] = useState<'hero' | 'blog'>('hero');
+  const [activeTab, setActiveTab] = useState<Tab>('hero');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Hero state
-  const [hero, setHero] = useState<HeroContent>(adminContent.hero);
-
-  // Blog state
-  const [posts, setPosts] = useState<BlogPost[]>(adminContent.blogPosts);
+  // Local state per section
+  const [hero, setHero] = useState(adminContent.hero);
+  const [aboutImage, setAboutImage] = useState(adminContent.aboutImage);
+  const [aboutBio, setAboutBio] = useState<LocalizedString>(adminContent.aboutBio || emptyLS());
+  const [galleryImages, setGalleryImages] = useState<string[]>(adminContent.galleryImages || []);
+  const [posts, setPosts] = useState<BlogPost[]>(adminContent.blogPosts || []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isNewPost, setIsNewPost] = useState(false);
 
-  useEffect(() => { setHero(adminContent.hero); }, [adminContent.hero]);
-  useEffect(() => { setPosts(adminContent.blogPosts); }, [adminContent.blogPosts]);
+  useEffect(() => {
+    setHero(adminContent.hero);
+    setAboutImage(adminContent.aboutImage || '');
+    setAboutBio(adminContent.aboutBio || emptyLS());
+    setGalleryImages(adminContent.galleryImages || []);
+    setPosts(adminContent.blogPosts || []);
+  }, [adminContent]);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, '1');
-      setAuthed(true);
-    } else {
-      showToast('Pogrešna lozinka', 'error');
-    }
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    setAuthed(false);
-  };
-
-  const buildAndSave = async (newHero: HeroContent, newPosts: BlogPost[]) => {
+  const save = async (overrides?: Partial<AdminContent>) => {
     setSaving(true);
-    const content: AdminContent = { hero: newHero, blogPosts: newPosts };
-    const json = JSON.stringify(content, null, 2);
-
+    const content: AdminContent = {
+      hero, blogPosts: posts, aboutImage, aboutBio, galleryImages,
+      ...overrides,
+    };
     const result = await commitFile(
       'public/admin-content.json',
-      json,
+      JSON.stringify(content, null, 2),
       `Admin: izmena sadrzaja ${new Date().toLocaleString('sr')}`
     );
-
     if (result.success) {
       setAdminContent(content);
-      showToast('✅ Sačuvano! Vercel deploy u toku (~30 sek)...', 'success');
+      showToast('✅ Sačuvano! Deploy u toku (~30 sek)', 'success');
     } else {
-      showToast(`❌ Greška: ${result.error}`, 'error');
+      showToast(`❌ ${result.error}`, 'error');
     }
     setSaving(false);
   };
 
-  // ─── Login Screen ─────────────────────────────────────────────────────────
+  // ─── Login ─────────────────────────────────────────────────────────────────
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
@@ -232,28 +196,22 @@ export const AdminPage = () => {
             <p className="text-[#d4af37] text-xs uppercase tracking-[0.4em] mb-2">Ana Backstage</p>
             <h1 className="text-white text-2xl font-serif">Admin Panel</h1>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={e => {
+            e.preventDefault();
+            if (password === ADMIN_PASSWORD) { sessionStorage.setItem(SESSION_KEY, '1'); setAuthed(true); }
+            else showToast('Pogrešna lozinka', 'error');
+          }} className="space-y-4">
             <div className="relative">
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Lozinka"
-                autoFocus
-                className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 pr-12 rounded focus:outline-none focus:border-[#d4af37] text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-              >
+              <input type={showPw ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)} placeholder="Lozinka" autoFocus
+                className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 pr-12 rounded focus:outline-none focus:border-[#d4af37] text-sm" />
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white">
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <button
-              type="submit"
-              className="w-full bg-[#d4af37] hover:bg-[#c4a030] text-black font-bold uppercase tracking-widest text-xs py-3 rounded transition-colors"
-            >
+            <button type="submit"
+              className="w-full bg-[#d4af37] hover:bg-[#c4a030] text-black font-bold uppercase tracking-widest text-xs py-3 rounded transition-colors">
               Prijavi se
             </button>
           </form>
@@ -263,172 +221,146 @@ export const AdminPage = () => {
     );
   }
 
-  // ─── Admin Dashboard ──────────────────────────────────────────────────────
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'hero', label: '🖼️ Hero' },
+    { key: 'omeni', label: '👤 O meni' },
+    { key: 'galerija', label: '🎓 Galerija' },
+    { key: 'blog', label: '📝 Blog' },
+  ];
+
+  const SaveBtn = ({ onClick }: { onClick: () => void }) => (
+    <button onClick={onClick} disabled={saving}
+      className="flex items-center gap-2 px-8 py-3 bg-[#d4af37] hover:bg-[#c4a030] disabled:opacity-50 text-black font-bold uppercase tracking-widest text-xs rounded transition-colors">
+      {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+      {saving ? 'Čuvam...' : 'Sačuvaj i deploy-uj'}
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
       <header className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 bg-[#0a0a0a] z-50">
-        <div className="flex items-center gap-4">
-          <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em]">Ana Backstage</span>
-          <span className="text-zinc-600 text-xs">Admin</span>
-        </div>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs transition-colors">
+        <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em]">Ana Backstage · Admin</span>
+        <button onClick={() => { sessionStorage.removeItem(SESSION_KEY); setAuthed(false); }}
+          className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs transition-colors">
           <LogOut size={14} /> Odjavi se
         </button>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 border-b border-zinc-800 pb-0">
-          {(['hero', 'blog'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 text-xs uppercase tracking-widest font-bold transition-colors border-b-2 -mb-px ${
-                activeTab === tab
-                  ? 'border-[#d4af37] text-[#d4af37]'
-                  : 'border-transparent text-zinc-500 hover:text-white'
-              }`}
-            >
-              {tab === 'hero' ? '🖼️ Hero Sekcija' : '📝 Blog Postovi'}
-            </button>
+        <div className="flex gap-1 mb-8 border-b border-zinc-800">
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key)}
+              className={`px-5 py-3 text-xs uppercase tracking-widest font-bold transition-colors border-b-2 -mb-px ${
+                activeTab === t.key ? 'border-[#d4af37] text-[#d4af37]' : 'border-transparent text-zinc-500 hover:text-white'
+              }`}>{t.label}</button>
           ))}
         </div>
 
-        {/* ─── HERO TAB ─── */}
+        {/* ── HERO ── */}
         {activeTab === 'hero' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Hero Sekcija</h2>
-              <p className="text-zinc-500 text-xs">
-                Ako ostaviš prazno, koriste se originalni tekstovi iz i18n fajla i Figma slike.
-              </p>
+              <p className="text-zinc-500 text-xs">Slideshow slike i tekst koji se prikazuje posetiocu pri dolasku na sajt. Ako ostaviš prazno, koriste se originalni tekstovi.</p>
             </div>
 
-            {/* Hero Images */}
             <div className="space-y-3">
-              <label className="block text-xs uppercase tracking-widest text-zinc-400">
-                Hero Slike (slideshow) — dodaj do 6
-              </label>
-              {(hero.images || []).map((img, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <ImageUploader
-                    label={`Slika ${i + 1}`}
-                    value={img}
-                    onChange={url => {
-                      const imgs = [...hero.images];
-                      imgs[i] = url;
-                      setHero({ ...hero, images: imgs });
-                    }}
-                    onToast={showToast}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setHero({ ...hero, images: hero.images.filter((_, idx) => idx !== i) })}
-                    className="p-2 text-red-400 hover:text-red-300 mt-6"
-                  >
-                    <X size={16} />
-                  </button>
+              <label className="block text-xs uppercase tracking-widest text-zinc-400">Slideshow slike (do 6)</label>
+              {hero.images.map((img, i) => (
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <ImageUploader label={`Slika ${i + 1}`} value={img}
+                      onChange={url => { const imgs = [...hero.images]; imgs[i] = url; setHero({ ...hero, images: imgs }); }}
+                      onToast={showToast} />
+                  </div>
+                  <button onClick={() => setHero({ ...hero, images: hero.images.filter((_, idx) => idx !== i) })}
+                    className="p-2 text-red-400 hover:text-red-300 mt-6"><X size={14} /></button>
                 </div>
               ))}
-              {(hero.images || []).length < 6 && (
-                <button
-                  type="button"
-                  onClick={() => setHero({ ...hero, images: [...(hero.images || []), ''] })}
-                  className="flex items-center gap-2 text-xs text-[#d4af37] hover:underline"
-                >
+              {hero.images.length < 6 && (
+                <button onClick={() => setHero({ ...hero, images: [...hero.images, ''] })}
+                  className="flex items-center gap-2 text-xs text-[#d4af37] hover:underline">
                   <Plus size={14} /> Dodaj sliku
                 </button>
               )}
             </div>
 
-            {/* Hero Text Overrides */}
-            <div className="grid gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">
-                  Subtitle (iznad naslova)
-                </label>
-                <input
-                  type="text"
-                  value={hero.subtitle}
-                  onChange={e => setHero({ ...hero, subtitle: e.target.value })}
-                  placeholder="npr. Makeup Artist & Content Creator"
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">
-                  Naslov (h1 — prvi red)
-                </label>
-                <input
-                  type="text"
-                  value={hero.title}
-                  onChange={e => setHero({ ...hero, title: e.target.value })}
-                  placeholder="npr. Otkrijte svoju"
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">
-                  Zlatni tekst (italic — drugi red)
-                </label>
-                <input
-                  type="text"
-                  value={hero.beauty}
-                  onChange={e => setHero({ ...hero, beauty: e.target.value })}
-                  placeholder="npr. Lepotu"
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">
-                  Opis (paragraf ispod naslova)
-                </label>
-                <textarea
-                  value={hero.description}
-                  onChange={e => setHero({ ...hero, description: e.target.value })}
-                  rows={3}
-                  placeholder="Kratki opis..."
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37] resize-none"
-                />
-              </div>
+            <div className="grid gap-4 pt-4 border-t border-zinc-800">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Tekst override (opciono)</p>
+              {[
+                { field: 'subtitle', label: 'Subtitle (sitni tekst iznad naslova)' },
+                { field: 'title', label: 'Naslov (1. red)' },
+                { field: 'beauty', label: 'Zlatni tekst (2. red, italic)' },
+                { field: 'description', label: 'Opis ispod naslova' },
+              ].map(({ field, label }) => (
+                <div key={field}>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">{label}</label>
+                  <input type="text" value={(hero as any)[field]}
+                    onChange={e => setHero({ ...hero, [field]: e.target.value })}
+                    className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
+                </div>
+              ))}
             </div>
-
-            <button
-              onClick={() => buildAndSave(hero, posts)}
-              disabled={saving}
-              className="flex items-center gap-2 px-8 py-3 bg-[#d4af37] hover:bg-[#c4a030] disabled:opacity-50 text-black font-bold uppercase tracking-widest text-xs rounded transition-colors"
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {saving ? 'Čuvam...' : 'Sačuvaj i deploy-uj'}
-            </button>
+            <SaveBtn onClick={() => save({ hero })} />
           </div>
         )}
 
-        {/* ─── BLOG TAB ─── */}
+        {/* ── O MENI ── */}
+        {activeTab === 'omeni' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-serif mb-1">O meni</h2>
+              <p className="text-zinc-500 text-xs">Profilna slika i bio koji se prikazuje u sekciji "O meni". Klikni "Auto-prevedi" da dobiješ EN i DE automatski.</p>
+            </div>
+            <ImageUploader label="Profilna slika (O meni sekcija)" value={aboutImage}
+              onChange={setAboutImage} onToast={showToast} />
+            <LocalizedField label="Bio tekst" value={aboutBio} onChange={setAboutBio}
+              multiline onToast={showToast} />
+            <SaveBtn onClick={() => save({ aboutImage, aboutBio })} />
+          </div>
+        )}
+
+        {/* ── GALERIJA ── */}
+        {activeTab === 'galerija' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-serif mb-1">Galerija učenika</h2>
+              <p className="text-zinc-500 text-xs">Slike koje dodaš ovde se prikazuju na vrhu galerije (ispred originalnih). Klikni na X da ukloniš.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {galleryImages.map((img, i) => (
+                <div key={i} className="relative group aspect-square">
+                  <img src={img} alt="" className="w-full h-full object-cover rounded border border-zinc-700" />
+                  <button onClick={() => setGalleryImages(galleryImages.filter((_, idx) => idx !== i))}
+                    className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              <ImageUploader label="+ Nova slika" value=""
+                onChange={url => { if (url) setGalleryImages([...galleryImages, url]); }}
+                onToast={showToast} />
+            </div>
+            <SaveBtn onClick={() => save({ galleryImages })} />
+          </div>
+        )}
+
+        {/* ── BLOG ── */}
         {activeTab === 'blog' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-serif mb-1">Blog Postovi</h2>
-                <p className="text-zinc-500 text-xs">
-                  Postojećih {6} originalnih postova + {posts.length} admin postova
-                </p>
+                <p className="text-zinc-500 text-xs">6 originalnih + {posts.length} tvojih postova. Piši na srpskom, klikni "Auto-prevedi".</p>
               </div>
-              <button
-                onClick={() => {
-                  const np = emptyPost();
-                  setEditingPost(np);
-                  setIsNewPost(true);
-                  setExpandedId(np.id);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] hover:bg-[#c4a030] text-black text-xs font-bold uppercase tracking-widest rounded transition-colors"
-              >
+              <button onClick={() => { setEditingPost(emptyPost()); setIsNewPost(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] hover:bg-[#c4a030] text-black text-xs font-bold uppercase tracking-widest rounded transition-colors">
                 <Plus size={14} /> Novi post
               </button>
             </div>
 
-            {/* New/Edit Post Form */}
             {editingPost && (
               <div className="border border-[#d4af37]/40 rounded-lg p-6 bg-zinc-900 space-y-5">
                 <div className="flex items-center justify-between mb-2">
@@ -440,118 +372,71 @@ export const AdminPage = () => {
                   </button>
                 </div>
 
-                <ImageUploader
-                  label="Naslovna slika"
-                  value={editingPost.image}
-                  onChange={url => setEditingPost({ ...editingPost, image: url })}
-                  onToast={showToast}
-                />
+                <ImageUploader label="Naslovna slika" value={editingPost.image}
+                  onChange={url => setEditingPost({ ...editingPost, image: url })} onToast={showToast} />
 
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">YouTube URL (opciono)</label>
-                  <input
-                    type="text"
-                    value={editingPost.video || ''}
+                  <input type="text" value={editingPost.video || ''}
                     onChange={e => setEditingPost({ ...editingPost, video: e.target.value })}
                     placeholder="https://youtu.be/..."
-                    className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-                  />
+                    className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">Datum</label>
-                  <input
-                    type="date"
-                    value={editingPost.date}
+                  <input type="date" value={editingPost.date}
                     onChange={e => setEditingPost({ ...editingPost, date: e.target.value })}
-                    className="bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]"
-                  />
+                    className="bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
                 </div>
 
-                <LocalizedField
-                  label="Naslov"
-                  value={editingPost.title}
-                  onChange={v => setEditingPost({ ...editingPost, title: v })}
-                />
-
-                <LocalizedField
-                  label="Kategorija"
-                  value={editingPost.category}
-                  onChange={v => setEditingPost({ ...editingPost, category: v })}
-                />
-
-                <LocalizedField
-                  label="Tekst (sadržaj)"
-                  value={editingPost.content}
-                  onChange={v => setEditingPost({ ...editingPost, content: v })}
-                  multiline
-                />
+                <LocalizedField label="Naslov" value={editingPost.title}
+                  onChange={v => setEditingPost({ ...editingPost, title: v })} onToast={showToast} />
+                <LocalizedField label="Kategorija" value={editingPost.category}
+                  onChange={v => setEditingPost({ ...editingPost, category: v })} onToast={showToast} />
+                <LocalizedField label="Tekst (sadržaj)" value={editingPost.content}
+                  onChange={v => setEditingPost({ ...editingPost, content: v })} multiline onToast={showToast} />
 
                 <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={async () => {
-                      const newPosts = isNewPost
-                        ? [...posts, editingPost]
-                        : posts.map(p => p.id === editingPost.id ? editingPost : p);
-                      await buildAndSave(hero, newPosts);
-                      setPosts(newPosts);
-                      setEditingPost(null);
-                      setIsNewPost(false);
-                    }}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2 bg-[#d4af37] hover:bg-[#c4a030] disabled:opacity-50 text-black font-bold uppercase tracking-widest text-xs rounded transition-colors"
-                  >
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                    {saving ? 'Čuvam...' : 'Sačuvaj'}
+                  <button onClick={async () => {
+                    const newPosts = isNewPost ? [...posts, editingPost] : posts.map(p => p.id === editingPost.id ? editingPost : p);
+                    await save({ blogPosts: newPosts });
+                    setPosts(newPosts); setEditingPost(null); setIsNewPost(false);
+                  }} disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2 bg-[#d4af37] hover:bg-[#c4a030] disabled:opacity-50 text-black font-bold uppercase tracking-widest text-xs rounded">
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Sačuvaj
                   </button>
-                  <button
-                    onClick={() => { setEditingPost(null); setIsNewPost(false); }}
-                    className="px-6 py-2 border border-zinc-700 text-zinc-400 hover:text-white text-xs uppercase tracking-widest rounded transition-colors"
-                  >
+                  <button onClick={() => { setEditingPost(null); setIsNewPost(false); }}
+                    className="px-6 py-2 border border-zinc-700 text-zinc-400 hover:text-white text-xs uppercase tracking-widest rounded">
                     Odustani
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Posts List */}
             {posts.length === 0 && !editingPost && (
-              <div className="text-center py-16 text-zinc-600 border border-zinc-800 rounded-lg">
-                <p className="text-sm">Nema admin postova. Klikni "Novi post" da dodaš.</p>
+              <div className="text-center py-12 text-zinc-600 border border-zinc-800 rounded-lg">
+                <p className="text-sm">Nema tvojih postova. Klikni "+ Novi post".</p>
               </div>
             )}
 
             {posts.map(post => (
-              <div key={post.id} className="border border-zinc-800 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-zinc-900">
-                  <div className="flex items-center gap-3">
-                    {post.image && (
-                      <img src={post.image} alt="" className="w-10 h-10 object-cover rounded" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-white line-clamp-1">{post.title.sr || post.title.en || 'Bez naslova'}</p>
-                      <p className="text-xs text-zinc-500">{post.date}</p>
-                    </div>
+              <div key={post.id} className="flex items-center justify-between px-4 py-3 border border-zinc-800 rounded-lg bg-zinc-900">
+                <div className="flex items-center gap-3">
+                  {post.image && <img src={post.image} alt="" className="w-10 h-10 object-cover rounded" />}
+                  <div>
+                    <p className="text-sm font-medium text-white line-clamp-1">{post.title.sr || post.title.en || 'Bez naslova'}</p>
+                    <p className="text-xs text-zinc-500">{post.date}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => { setEditingPost({ ...post }); setIsNewPost(false); }}
-                      className="p-2 text-zinc-400 hover:text-[#d4af37] transition-colors"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm('Obrisati ovaj post?')) return;
-                        const newPosts = posts.filter(p => p.id !== post.id);
-                        await buildAndSave(hero, newPosts);
-                        setPosts(newPosts);
-                      }}
-                      className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setEditingPost({ ...post }); setIsNewPost(false); }}
+                    className="p-2 text-zinc-400 hover:text-[#d4af37]"><Edit2 size={14} /></button>
+                  <button onClick={async () => {
+                    if (!confirm('Obrisati?')) return;
+                    const newPosts = posts.filter(p => p.id !== post.id);
+                    await save({ blogPosts: newPosts }); setPosts(newPosts);
+                  }} className="p-2 text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
