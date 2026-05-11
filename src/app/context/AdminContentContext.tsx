@@ -32,7 +32,9 @@ export interface AdminContent {
   aboutImage: string;
   aboutBio: LocalizedString;
   galleryImages: string[];
+  hiddenGalleryIds: number[];
   services: ServiceItem[];
+  servicePrices: Record<string, string>;
   academyCertificate: AcademyCertificate;
 }
 
@@ -49,7 +51,9 @@ const defaultContent: AdminContent = {
   aboutImage: '',
   aboutBio: { sr: '', en: '', de: '' },
   galleryImages: [],
+  hiddenGalleryIds: [],
   services: [],
+  servicePrices: {},
   academyCertificate: {
     title: { sr: '', en: '', de: '' },
     desc: { sr: '', en: '', de: '' },
@@ -78,7 +82,9 @@ export const AdminContentProvider = ({ children }: { children: React.ReactNode }
           aboutImage: data.aboutImage || '',
           aboutBio: data.aboutBio || { sr: '', en: '', de: '' },
           galleryImages: data.galleryImages || [],
+          hiddenGalleryIds: data.hiddenGalleryIds || [],
           services: data.services || [],
+          servicePrices: data.servicePrices || {},
           academyCertificate: data.academyCertificate || defaultContent.academyCertificate,
         });
       }

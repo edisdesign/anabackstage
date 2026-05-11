@@ -1,16 +1,12 @@
 {
-  "hero": {
-    "images": [],
-    "subtitle": "",
-    "title": "",
-    "beauty": "",
-    "description": ""
-  },
+  "hero": { "images": [], "subtitle": "", "title": "", "beauty": "", "description": "" },
   "blogPosts": [],
   "aboutImage": "",
   "aboutBio": { "sr": "", "en": "", "de": "" },
   "galleryImages": [],
+  "hiddenGalleryIds": [],
   "services": [],
+  "servicePrices": {},
   "academyCertificate": {
     "title": { "sr": "", "en": "", "de": "" },
     "desc": { "sr": "", "en": "", "de": "" }

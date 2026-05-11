@@ -3,6 +3,25 @@ import { commitFile, uploadImage } from '@/lib/githubApi';
 import { useAdminContent, AdminContent, LocalizedString, ServiceItem, AcademyCertificate } from '@/app/context/AdminContentContext';
 import { BlogPost, blogPosts as originalPosts } from '@/app/data/blogPosts';
 import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages, Copy } from 'lucide-react';
+import {
+  heroImg1, heroImg2, heroImg3, heroImg4,
+  aboutImg,
+  galImg1, galImg2, galImg3, galImg4, galImg5, galImg6, galImg7,
+  galImg8, galImg9, galImg10, galImg11, galImg12, galImg13,
+  svcClassicMakeup, svcSpecialOccasion, svcClassicHair, svcHairWaves, svcSpecialHair, svcHijab,
+  certificateImg,
+} from '@/app/data/staticImages';
+
+const ORIG_HERO = [heroImg1, heroImg2, heroImg3, heroImg4];
+const ORIG_GALLERY = [galImg12, galImg3, galImg8, galImg11, galImg5, galImg9, galImg13, galImg7, galImg1, galImg10, galImg4, galImg2, galImg6];
+const ORIG_SERVICES = [
+  { key: 'classic_makeup', name: 'Klasični Make up', price: '3500 din', img: svcClassicMakeup },
+  { key: 'special_makeup', name: 'Make up za posebne prilike', price: '6000 din', img: svcSpecialOccasion },
+  { key: 'hijab', name: 'Stilizovanje hidžaba', price: '3000 din', img: svcHijab },
+  { key: 'classic_hair', name: 'Klasične frizure', price: '1000–2000 din', img: svcClassicHair },
+  { key: 'special_hair', name: 'Svečane frizure', price: '2000–5000 din', img: svcSpecialHair },
+  { key: 'waves', name: 'Talasi', price: '1000–2500 din', img: svcHairWaves },
+];
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'anabackstage2024';
 const SESSION_KEY = 'ab_admin_session';
@@ -150,7 +169,9 @@ export const AdminPage = () => {
   const [aboutImage, setAboutImage] = useState(adminContent.aboutImage);
   const [aboutBio, setAboutBio] = useState<LocalizedString>(adminContent.aboutBio || emptyLS());
   const [galleryImages, setGalleryImages] = useState<string[]>(adminContent.galleryImages || []);
+  const [hiddenGalleryIds, setHiddenGalleryIds] = useState<number[]>(adminContent.hiddenGalleryIds || []);
   const [services, setServices] = useState<ServiceItem[]>(adminContent.services || []);
+  const [servicePrices, setServicePrices] = useState<Record<string,string>>(adminContent.servicePrices || {});
   const [academyCert, setAcademyCert] = useState<AcademyCertificate>(adminContent.academyCertificate);
   const [posts, setPosts] = useState<BlogPost[]>(adminContent.blogPosts || []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -170,7 +191,9 @@ export const AdminPage = () => {
       setAboutBio(existingBio);
     }
     setGalleryImages(adminContent.galleryImages || []);
+    setHiddenGalleryIds(adminContent.hiddenGalleryIds || []);
     setServices(adminContent.services || []);
+    setServicePrices(adminContent.servicePrices || {});
     setAcademyCert(adminContent.academyCertificate);
     setPosts(adminContent.blogPosts || []);
   }, [adminContent]);
@@ -184,7 +207,7 @@ export const AdminPage = () => {
     setSaving(true);
     const content: AdminContent = {
       hero, blogPosts: posts, aboutImage, aboutBio, galleryImages,
-      services, academyCertificate: academyCert,
+      hiddenGalleryIds, services, servicePrices, academyCertificate: academyCert,
       ...overrides,
     };
     const result = await commitFile(
@@ -284,29 +307,48 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Hero Sekcija</h2>
-              <p className="text-zinc-500 text-xs">Slideshow slike i tekst koji se prikazuje posetiocu pri dolasku na sajt. Ako ostaviš prazno, koriste se originalni tekstovi.</p>
+              <p className="text-zinc-500 text-xs">Originalne slike su uvek u pozadini. Ako dodaš nove, one zamenjuju originalne. Klikni na sliku da je zameniš.</p>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-xs uppercase tracking-widest text-zinc-400">Slideshow slike (do 6)</label>
-              {hero.images.map((img, i) => (
-                <div key={i} className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <ImageUploader label={`Slika ${i + 1}`} value={img}
-                      onChange={url => { const imgs = [...hero.images]; imgs[i] = url; setHero({ ...hero, images: imgs }); }}
-                      onToast={showToast} />
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-2">Trenutne slike (originalne)</p>
+              <div className="grid grid-cols-4 gap-2">
+                {ORIG_HERO.map((src, i) => (
+                  <div key={i} className="relative group aspect-[3/4]">
+                    <img src={src} alt={`Hero ${i+1}`} className="w-full h-full object-cover rounded border border-zinc-700" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                      <label className="cursor-pointer text-[10px] text-white text-center px-1">
+                        <Upload size={14} className="mx-auto mb-1" />
+                        Zameni
+                        <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = async () => {
+                            const base64 = reader.result as string;
+                            const result = await uploadImage(`${Date.now()}-hero${i}.${file.name.split('.').pop()}`, base64, 'Admin: hero image');
+                            const url = result.success && result.url ? result.url : base64;
+                            const imgs = [...(hero.images.length ? hero.images : [...ORIG_HERO])];
+                            imgs[i] = url;
+                            setHero({ ...hero, images: imgs });
+                            showToast('✅ Slika ažurirana — klikni Sačuvaj', 'success');
+                          };
+                          reader.readAsDataURL(file);
+                        }} />
+                      </label>
+                    </div>
+                    {hero.images[i] && hero.images[i] !== src && (
+                      <div className="absolute top-1 left-1 bg-[#d4af37] text-black text-[8px] px-1 rounded">NOVO</div>
+                    )}
                   </div>
-                  <button onClick={() => setHero({ ...hero, images: hero.images.filter((_, idx) => idx !== i) })}
-                    className="p-2 text-red-400 hover:text-red-300 mt-6"><X size={14} /></button>
-                </div>
-              ))}
-              {hero.images.length < 6 && (
-                <button onClick={() => setHero({ ...hero, images: [...hero.images, ''] })}
-                  className="flex items-center gap-2 text-xs text-[#d4af37] hover:underline">
-                  <Plus size={14} /> Dodaj sliku
-                </button>
-              )}
+                ))}
+              </div>
             </div>
+
+            {hero.images.some(Boolean) && (
+              <button onClick={() => setHero({ ...hero, images: [] })} className="text-xs text-red-400 hover:underline">
+                ✕ Vrati originalne slike
+              </button>
+            )}
 
             <div className="grid gap-4 pt-4 border-t border-zinc-800">
               <p className="text-xs text-zinc-500 uppercase tracking-widest">Tekst override (opciono)</p>
@@ -333,12 +375,38 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">O meni</h2>
-              <p className="text-zinc-500 text-xs">Profilna slika i bio koji se prikazuje u sekciji "O meni". Klikni "Auto-prevedi" da dobiješ EN i DE automatski.</p>
+              <p className="text-zinc-500 text-xs">Klikni na sliku da je zameniš. Tekst piši na srpskom, klikni Auto-prevedi.</p>
             </div>
-            <ImageUploader label="Profilna slika (O meni sekcija)" value={aboutImage}
-              onChange={setAboutImage} onToast={showToast} />
-            <LocalizedField label="Bio tekst" value={aboutBio} onChange={setAboutBio}
-              multiline onToast={showToast} />
+
+            {/* Photo with click-to-replace overlay */}
+            <div className="relative group w-48 aspect-[3/4] mx-auto">
+              <img src={aboutImage || aboutImg} alt="O meni" className="w-full h-full object-cover border border-zinc-700 rounded" />
+              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer rounded">
+                <Upload size={20} className="text-white mb-1" />
+                <span className="text-white text-xs">Zameni sliku</span>
+                <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  showToast('Uploadujem...', 'info');
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const base64 = reader.result as string;
+                    const result = await uploadImage(`${Date.now()}-about.${file.name.split('.').pop()}`, base64, 'Admin: about image');
+                    setAboutImage(result.success && result.url ? result.url : base64);
+                    showToast(result.success ? '✅ Slika uploadovana!' : '⚠️ Preview ok, ali sačuvaj za deploy', result.success ? 'success' : 'error');
+                  };
+                  reader.readAsDataURL(file);
+                }} />
+              </label>
+              {aboutImage && (
+                <button onClick={() => setAboutImage('')}
+                  className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            {aboutImage && <p className="text-center text-[10px] text-[#d4af37]">✓ Prilagođena slika aktivna</p>}
+
+            <LocalizedField label="Bio tekst" value={aboutBio} onChange={setAboutBio} multiline onToast={showToast} />
             <SaveBtn onClick={() => save({ aboutImage, aboutBio })} />
           </div>
         )}
@@ -348,23 +416,47 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Galerija učenika</h2>
-              <p className="text-zinc-500 text-xs">Slike koje dodaš ovde se prikazuju na vrhu galerije (ispred originalnih). Klikni na X da ukloniš.</p>
+              <p className="text-zinc-500 text-xs">Sve slike su prikazane. X uklanja sliku iz galerije. Dodaj novu na dnu.</p>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {galleryImages.map((img, i) => (
-                <div key={i} className="relative group aspect-square">
-                  <img src={img} alt="" className="w-full h-full object-cover rounded border border-zinc-700" />
-                  <button onClick={() => setGalleryImages(galleryImages.filter((_, idx) => idx !== i))}
-                    className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X size={12} />
+
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600">Originalne slike ({ORIG_GALLERY.length - hiddenGalleryIds.length} vidljive)</p>
+            <div className="grid grid-cols-4 gap-2">
+              {ORIG_GALLERY.map((src, i) => (
+                <div key={i} className={`relative group aspect-square ${hiddenGalleryIds.includes(i) ? 'opacity-30' : ''}`}>
+                  <img src={src} alt="" className="w-full h-full object-cover rounded border border-zinc-700" />
+                  <button
+                    onClick={() => setHiddenGalleryIds(hiddenGalleryIds.includes(i)
+                      ? hiddenGalleryIds.filter(id => id !== i)
+                      : [...hiddenGalleryIds, i])}
+                    className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title={hiddenGalleryIds.includes(i) ? 'Vrati' : 'Ukloni'}>
+                    <X size={10} />
                   </button>
                 </div>
               ))}
-              <ImageUploader label="+ Nova slika" value=""
-                onChange={url => { if (url) setGalleryImages([...galleryImages, url]); }}
-                onToast={showToast} />
             </div>
-            <SaveBtn onClick={() => save({ galleryImages })} />
+
+            {galleryImages.length > 0 && (
+              <>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-600 pt-2">Tvoje slike</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {galleryImages.map((img, i) => (
+                    <div key={i} className="relative group aspect-square">
+                      <img src={img} alt="" className="w-full h-full object-cover rounded border border-zinc-700" />
+                      <button onClick={() => setGalleryImages(galleryImages.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <ImageUploader label="+ Dodaj sliku" value=""
+              onChange={url => { if (url) setGalleryImages([...galleryImages, url]); }}
+              onToast={showToast} />
+            <SaveBtn onClick={() => save({ galleryImages, hiddenGalleryIds })} />
           </div>
         )}
 
@@ -373,31 +465,6 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Usluge Salona</h2>
-              <p className="text-zinc-500 text-xs">
-                Dodaj nove usluge ili izmeni cene. Originalne 6 usluga uvek ostaju — ovde dodaješ na listu.
-                <br /><span className="text-zinc-600">Zakaži dugme → WhatsApp se ne dira.</span>
-              </p>
-            </div>
-
-            {services.map((svc, i) => (
-              <div key={i} className="border border-zinc-800 rounded-lg p-4 bg-zinc-900 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-400 uppercase tracking-widest">Usluga {i + 1}</span>
-                  <button onClick={() => setServices(services.filter((_, idx) => idx !== i))}
-                    className="text-red-400 hover:text-red-300"><X size={14} /></button>
-                </div>
-                <LocalizedField label="Naziv usluge" value={svc.name}
-                  onChange={v => { const s = [...services]; s[i] = { ...s[i], name: v }; setServices(s); }}
-                  onToast={showToast} />
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">Cena</label>
-                  <input type="text" value={svc.price}
-                    onChange={e => { const s = [...services]; s[i] = { ...s[i], price: e.target.value }; setServices(s); }}
-                    placeholder="npr. 3500 din"
-                    className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
-                </div>
-                <ImageUploader label="Slika (opciono)" value={svc.image || ''}
-                  onChange={url => { const s = [...services]; s[i] = { ...s[i], image: url }; setServices(s); }}
                   onToast={showToast} />
               </div>
             ))}
@@ -415,10 +482,19 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Akademija — Sertifikat</h2>
-              <p className="text-zinc-500 text-xs">
-                Izmeni tekst koji se prikazuje pored slike sertifikata. Kursevi i Zakaži dugme se ne diraju.
-              </p>
+              <p className="text-zinc-500 text-xs">Izmeni tekst pored slike sertifikata. Kursevi i Zakaži se ne diraju.</p>
             </div>
+
+            {/* Certificate preview */}
+            <div className="flex gap-6 items-start border border-zinc-800 rounded-lg p-4 bg-zinc-900">
+              <img src={certificateImg} alt="Sertifikat" className="w-28 h-auto rounded border border-zinc-700 flex-shrink-0" />
+              <div className="flex-1 space-y-1">
+                <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Trenutni tekst</p>
+                <p className="text-white text-sm font-medium">{academyCert.title.sr || 'Vaš Pečat Majstorstva'}</p>
+                <p className="text-zinc-400 text-xs leading-relaxed">{academyCert.desc.sr || 'Naš sertifikat je više od papira...'}</p>
+              </div>
+            </div>
+
             <LocalizedField label="Naslov sertifikata"
               value={academyCert.title}
               onChange={v => setAcademyCert({ ...academyCert, title: v })}
