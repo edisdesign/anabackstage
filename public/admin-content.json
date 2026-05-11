@@ -1,11 +1,78 @@
 {
-  "hero": { "images": [], "subtitle": "", "title": "", "beauty": "", "description": "" },
+  "hero": {
+    "images": [],
+    "subtitle": "MAKEUP & HAIR",
+    "title": "Budi Najlepša Verzija Sebe",
+    "beauty": "",
+    "description": "Od suptilne dnevne elegancije do glamuroznog večernjeg sjaja. Prepustite se stručnim rukama koje ističu vašu prirodnu lepotu."
+  },
   "blogPosts": [],
   "aboutImage": "",
-  "aboutBio": { "sr": "", "en": "", "de": "" },
+  "aboutBio": {
+    "sr": "Ana Muratović – nežna ruka iza snažne lepote. Makeup & Hijab artist koja još od trinaeste godine kroz šminku, kosu i hijab ističe prirodnu ženstvenost. Kreatorka lepote, mentorka budućih umetnica i osnivač škole šminkanja sa individualnim pristupom svakoj učenici. Suptilno, elegantno i sa dušom.\n\nNjen pristup nije samo nanošenje šminke, već razumevanje geometrije lica — filozofija koju prenosi svakom studentu na svojoj akademiji.",
+    "en": "Ana Muratović – a gentle hand behind strong beauty. A Makeup & Hijab artist who, since the age of thirteen, has been highlighting natural femininity through makeup, hair, and hijab. A creator of beauty, mentor to future artists, and founder of a makeup school with an individual approach to every student. Subtle, elegant, and with soul.\n\nHer approach is not just about application, but about understanding the geometry of the face—a philosophy she imparts to every student at her academy.",
+    "de": "Ana Muratović – eine sanfte Hand hinter starker Schönheit. Eine Make-up- & Hidschab-Künstlerin, die seit ihrem dreizehnten Lebensjahr durch Make-up, Haare und Hidschab die natürliche Weiblichkeit hervorhebt. Eine Schöpferin der Schönheit, Mentorin zukünftiger Künstlerinnen und Gründerin einer Make-up-Schule. Subtil, elegant und mit Seele.\n\nIhr Ansatz besteht nicht nur im Auftragen, sondern im Verständnis der Geometrie des Gesichts."
+  },
   "galleryImages": [],
-  "hiddenGalleryIds": [],
+  "hiddenGalleryIds": [
+    1
+  ],
   "services": [],
   "servicePrices": {},
-  "academyCourses": []
+  "academyCourses": [
+    {
+      "id": "self_makeup",
+      "title": {
+        "sr": "Kurs šminkanja za sebe",
+        "en": "",
+        "de": ""
+      },
+      "duration": {
+        "sr": "Individualno",
+        "en": "",
+        "de": ""
+      },
+      "description": {
+        "sr": "Ovaj kurs je namenjen svima koji žele da nauče kako da se pravilno i profesionalno našminkaju za svakodnevne i svečane prilike. Polaznice savladavaju osnovne tehnike, od pripreme kože do finalnog look-a.",
+        "en": "",
+        "de": ""
+      }
+    },
+    {
+      "id": "basic",
+      "title": {
+        "sr": "Basic kurs",
+        "en": "",
+        "de": ""
+      },
+      "duration": {
+        "sr": "5 dana / 5 tehnika",
+        "en": "",
+        "de": ""
+      },
+      "description": {
+        "sr": "Osnovni kurs pruža temeljna znanja o profesionalnom šminkanju kroz pet pažljivo odabranih tehnika. Namenjen je početnicima koji žele da steknu sigurnost u radu.",
+        "en": "",
+        "de": ""
+      }
+    },
+    {
+      "id": "pro",
+      "title": {
+        "sr": "Pro kurs",
+        "en": "",
+        "de": ""
+      },
+      "duration": {
+        "sr": "10 dana / 10 tehnika",
+        "en": "",
+        "de": ""
+      },
+      "description": {
+        "sr": "Pro kurs je obuhvatan program za one koji žele ozbiljno da se bave šminkanjem. Kroz deset dana, polaznice usvajaju deset različitih tehnika, od klasičnih do naprednih stilova.",
+        "en": "",
+        "de": ""
+      }
+    }
+  ]
 }
