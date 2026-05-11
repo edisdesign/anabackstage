@@ -68,7 +68,7 @@ export const Hero = () => {
                 </span>
               </div>
               
-              <h1 className="text-[8vw] md:text-[min(5vw,80px)] font-serif text-black dark:text-white leading-tight mb-4 md:mb-8 min-h-[2.5em] whitespace-nowrap">
+              <h1 className="text-[8vw] md:text-[min(5vw,80px)] font-serif text-black dark:text-white leading-tight mb-4 md:mb-8 min-h-[2.5em]">
                 {adminHero.title || t('hero.title')} <br/>
                 <span className="italic font-light text-[#d4af37]">{adminHero.beauty || t('hero.beauty')}</span>
               </h1>
