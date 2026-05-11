@@ -1,12 +1,19 @@
 import React from 'react';
 import Marquee from 'react-fast-marquee';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 
 export const SocialProof = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="bg-white dark:bg-black border-y border-black/10 dark:border-white/20 py-0 transition-colors duration-500">
+    <motion.section 
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="bg-white dark:bg-black border-y border-black/10 dark:border-white/20 py-0 transition-colors duration-500 relative z-20 -mt-8 md:-mt-16"
+    >
       <div className="flex">
         <div className="w-32 md:w-64 bg-black/5 dark:bg-white/5 border-r border-black/10 dark:border-white/20 flex items-center justify-center py-6 z-10 relative px-4">
           <span className="text-[#d4af37] text-xs md:text-sm font-serif italic text-center leading-tight">{t('social.featured')}</span>
@@ -28,6 +35,6 @@ export const SocialProof = () => {
           </Marquee>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
