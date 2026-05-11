@@ -204,7 +204,30 @@ export const AdminPage = () => {
     setHiddenGalleryIds(adminContent.hiddenGalleryIds || []);
     setServices(adminContent.services || []);
     setServicePrices(adminContent.servicePrices || {});
-    setAcademyCourses(adminContent.academyCourses || []);
+    if (!adminContent.academyCourses || adminContent.academyCourses.length === 0) {
+      setAcademyCourses([
+        {
+          id: 'self_makeup',
+          title: { sr: 'Kurs šminkanja za sebe', en: '', de: '' },
+          duration: { sr: 'Individualno', en: '', de: '' },
+          description: { sr: 'Ovaj kurs je namenjen svima koji žele da nauče kako da se pravilno i profesionalno našminkaju za svakodnevne i svečane prilike. Polaznice savladavaju osnovne tehnike, od pripreme kože do finalnog look-a.', en: '', de: '' }
+        },
+        {
+          id: 'basic',
+          title: { sr: 'Basic kurs', en: '', de: '' },
+          duration: { sr: '5 dana / 5 tehnika', en: '', de: '' },
+          description: { sr: 'Osnovni kurs pruža temeljna znanja o profesionalnom šminkanju kroz pet pažljivo odabranih tehnika. Namenjen je početnicima koji žele da steknu sigurnost u radu.', en: '', de: '' }
+        },
+        {
+          id: 'pro',
+          title: { sr: 'Pro kurs', en: '', de: '' },
+          duration: { sr: '10 dana / 10 tehnika', en: '', de: '' },
+          description: { sr: 'Pro kurs je obuhvatan program za one koji žele ozbiljno da se bave šminkanjem. Kroz deset dana, polaznice usvajaju deset različitih tehnika, od klasičnih do naprednih stilova.', en: '', de: '' }
+        }
+      ]);
+    } else {
+      setAcademyCourses(adminContent.academyCourses);
+    }
     setPosts(adminContent.blogPosts || []);
   }, [adminContent]);
 
