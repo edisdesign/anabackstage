@@ -7,8 +7,5 @@
   "hiddenGalleryIds": [],
   "services": [],
   "servicePrices": {},
-  "academyCertificate": {
-    "title": { "sr": "", "en": "", "de": "" },
-    "desc": { "sr": "", "en": "", "de": "" }
-  }
+  "academyCourses": []
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { commitFile, uploadImage } from '@/lib/githubApi';
-import { useAdminContent, AdminContent, LocalizedString, ServiceItem, AcademyCertificate } from '@/app/context/AdminContentContext';
+import { useAdminContent, AdminContent, LocalizedString, ServiceItem, AcademyCourse } from '@/app/context/AdminContentContext';
 import { BlogPost, blogPosts as originalPosts } from '@/app/data/blogPosts';
 import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages, Copy } from 'lucide-react';
 import {
@@ -172,13 +172,23 @@ export const AdminPage = () => {
   const [hiddenGalleryIds, setHiddenGalleryIds] = useState<number[]>(adminContent.hiddenGalleryIds || []);
   const [services, setServices] = useState<ServiceItem[]>(adminContent.services || []);
   const [servicePrices, setServicePrices] = useState<Record<string,string>>(adminContent.servicePrices || {});
-  const [academyCert, setAcademyCert] = useState<AcademyCertificate>(adminContent.academyCertificate);
+  const [academyCourses, setAcademyCourses] = useState<AcademyCourse[]>(adminContent.academyCourses || []);
   const [posts, setPosts] = useState<BlogPost[]>(adminContent.blogPosts || []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [isNewPost, setIsNewPost] = useState(false);
 
   useEffect(() => {
-    setHero(adminContent.hero);
+    if (!adminContent.hero.title) {
+      setHero({
+        ...adminContent.hero,
+        subtitle: 'MAKEUP & HAIR',
+        title: 'Budi Najlepša Verzija Sebe',
+        beauty: '',
+        description: 'Od suptilne dnevne elegancije do glamuroznog večernjeg sjaja. Prepustite se stručnim rukama koje ističu vašu prirodnu lepotu.',
+      });
+    } else {
+      setHero(adminContent.hero);
+    }
     setAboutImage(adminContent.aboutImage || '');
     const existingBio = adminContent.aboutBio;
     if (!existingBio?.sr) {
@@ -194,7 +204,7 @@ export const AdminPage = () => {
     setHiddenGalleryIds(adminContent.hiddenGalleryIds || []);
     setServices(adminContent.services || []);
     setServicePrices(adminContent.servicePrices || {});
-    setAcademyCert(adminContent.academyCertificate);
+    setAcademyCourses(adminContent.academyCourses || []);
     setPosts(adminContent.blogPosts || []);
   }, [adminContent]);
 
@@ -207,7 +217,7 @@ export const AdminPage = () => {
     setSaving(true);
     const content: AdminContent = {
       hero, blogPosts: posts, aboutImage, aboutBio, galleryImages,
-      hiddenGalleryIds, services, servicePrices, academyCertificate: academyCert,
+      hiddenGalleryIds, services, servicePrices, academyCourses,
       ...overrides,
     };
     const result = await commitFile(
@@ -526,29 +536,41 @@ export const AdminPage = () => {
         {activeTab === 'akademija' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-serif mb-1">Akademija — Sertifikat</h2>
-              <p className="text-zinc-500 text-xs">Izmeni tekst pored slike sertifikata. Kursevi i Zakaži se ne diraju.</p>
+              <h2 className="text-lg font-serif mb-1">Akademija — Kursevi</h2>
+              <p className="text-zinc-500 text-xs">Izmeni postojeća 3 kursa. Ostavi polja prazna ako želiš da se prikazuje originalni tekst.</p>
             </div>
 
-            {/* Certificate preview */}
-            <div className="flex gap-6 items-start border border-zinc-800 rounded-lg p-4 bg-zinc-900">
-              <img src={certificateImg} alt="Sertifikat" className="w-28 h-auto rounded border border-zinc-700 flex-shrink-0" />
-              <div className="flex-1 space-y-1">
-                <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Trenutni tekst</p>
-                <p className="text-white text-sm font-medium">{academyCert.title.sr || 'Vaš Pečat Majstorstva'}</p>
-                <p className="text-zinc-400 text-xs leading-relaxed">{academyCert.desc.sr || 'Naš sertifikat je više od papira...'}</p>
-              </div>
-            </div>
+            {['self_makeup', 'basic', 'pro'].map((baseId, i) => {
+              const course = academyCourses.find(c => c.id === baseId) || { id: baseId, title: emptyLS(), duration: emptyLS(), description: emptyLS() };
+              const originalNames = ['Šminkanje za sebe', 'Osnovni kurs šminkanja', 'Pro makeup kurs'];
+              
+              const updateCourse = (field: keyof AcademyCourse, val: LocalizedString) => {
+                const c = [...academyCourses];
+                const idx = c.findIndex(x => x.id === baseId);
+                if (idx >= 0) {
+                  c[idx] = { ...c[idx], [field]: val };
+                } else {
+                  c.push({ ...course, [field]: val });
+                }
+                setAcademyCourses(c);
+              };
 
-            <LocalizedField label="Naslov sertifikata"
-              value={academyCert.title}
-              onChange={v => setAcademyCert({ ...academyCert, title: v })}
-              onToast={showToast} />
-            <LocalizedField label="Opis sertifikata"
-              value={academyCert.desc}
-              onChange={v => setAcademyCert({ ...academyCert, desc: v })}
-              multiline onToast={showToast} />
-            <SaveBtn onClick={() => save({ academyCertificate: academyCert })} />
+              return (
+                <div key={baseId} className="border border-zinc-800 rounded-lg p-4 bg-zinc-900 space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-[#d4af37]">{originalNames[i]}</span>
+                  </div>
+                  <LocalizedField label="Naziv kursa" value={course.title}
+                    onChange={v => updateCourse('title', v)} onToast={showToast} />
+                  <LocalizedField label="Trajanje" value={course.duration}
+                    onChange={v => updateCourse('duration', v)} onToast={showToast} />
+                  <LocalizedField label="Opis" value={course.description}
+                    onChange={v => updateCourse('description', v)} multiline onToast={showToast} />
+                </div>
+              );
+            })}
+
+            <SaveBtn onClick={() => save({ academyCourses })} />
           </div>
         )}
 

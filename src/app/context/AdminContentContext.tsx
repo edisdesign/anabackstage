@@ -21,9 +21,11 @@ export interface ServiceItem {
   image?: string;
 }
 
-export interface AcademyCertificate {
+export interface AcademyCourse {
+  id: string;
   title: LocalizedString;
-  desc: LocalizedString;
+  duration: LocalizedString;
+  description: LocalizedString;
 }
 
 export interface AdminContent {
@@ -35,7 +37,7 @@ export interface AdminContent {
   hiddenGalleryIds: number[];
   services: ServiceItem[];
   servicePrices: Record<string, string>;
-  academyCertificate: AcademyCertificate;
+  academyCourses: AcademyCourse[];
 }
 
 interface AdminContentContextValue {
@@ -54,10 +56,7 @@ const defaultContent: AdminContent = {
   hiddenGalleryIds: [],
   services: [],
   servicePrices: {},
-  academyCertificate: {
-    title: { sr: '', en: '', de: '' },
-    desc: { sr: '', en: '', de: '' },
-  },
+  academyCourses: [],
 };
 
 const AdminContentContext = createContext<AdminContentContextValue>({
@@ -85,7 +84,7 @@ export const AdminContentProvider = ({ children }: { children: React.ReactNode }
           hiddenGalleryIds: data.hiddenGalleryIds || [],
           services: data.services || [],
           servicePrices: data.servicePrices || {},
-          academyCertificate: data.academyCertificate || defaultContent.academyCertificate,
+          academyCourses: data.academyCourses || [],
         });
       }
     } catch { /* graceful fallback */ }
