@@ -8,24 +8,24 @@
   },
   "blogPosts": [
     {
-      "id": "post-1778509576433-zt4og",
-      "image": "https://raw.githubusercontent.com/edisdesign/anabackstage/main/admin-images/1778509580687-3a1e8a116c7446d75dcd9f08d344db24e99cb986.png",
-      "video": "https://www.youtube.com/watch?v=ARr9YX2E-y4",
+      "id": "post-1778509771146-2iyuc",
+      "image": "https://raw.githubusercontent.com/edisdesign/anabackstage/main/admin-images/1778509776860-3a1e8a116c7446d75dcd9f08d344db24e99cb986.png",
+      "video": "https://www.youtube.com/watch?v=VdgWfdkIGn0",
       "date": "2026-05-11",
       "title": {
-        "sr": " vala lijepa slika",
-        "en": "- Nice photo.",
-        "de": "vala schönes bild"
+        "sr": "stvarno",
+        "en": "",
+        "de": ""
       },
       "category": {
-        "sr": "sminkanje uljem",
-        "en": "oil make-up",
-        "de": "öl-Make-up"
+        "sr": "gde me nadje",
+        "en": "where to find me",
+        "de": "wo Sie mich finden können"
       },
       "content": {
-        "sr": "dosta dosta dobra slika",
-        "en": "pretty pretty good picture",
-        "de": "ziemlich ziemlich gutes Bild"
+        "sr": "dosta dobar auto",
+        "en": "Pretty good.",
+        "de": "gut genug Auto"
       }
     }
   ],
@@ -43,7 +43,7 @@
     {
       "id": "self_makeup",
       "title": {
-        "sr": "Kurs šminkanja za sebe",
+        "sr": "Kurs šminkanja za sebee",
         "en": "",
         "de": ""
       },
