@@ -661,7 +661,7 @@ export const AdminPage = () => {
                     setPosts(newPosts); setEditingPost(null); setIsNewPost(false);
                   }} disabled={saving}
                     className="flex items-center gap-2 px-6 py-2 bg-[#d4af37] hover:bg-[#c4a030] disabled:opacity-50 text-black font-bold uppercase tracking-widest text-xs rounded">
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Sačuvaj
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? 'Čuvam...' : 'Sačuvaj i deploy-uj'}
                   </button>
                   <button onClick={() => { setEditingPost(null); setIsNewPost(false); }}
                     className="px-6 py-2 border border-zinc-700 text-zinc-400 hover:text-white text-xs uppercase tracking-widest rounded">
