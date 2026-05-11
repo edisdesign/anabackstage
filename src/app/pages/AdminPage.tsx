@@ -465,15 +465,60 @@ export const AdminPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-serif mb-1">Usluge Salona</h2>
-                  onToast={showToast} />
+              <p className="text-zinc-500 text-xs">Izmeni cenu originalnih usluga ili dodaj novu. Zakaži → WhatsApp se ne dira.</p>
+            </div>
+
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600">Originalne usluge</p>
+            {ORIG_SERVICES.map((svc) => (
+              <div key={svc.key} className="flex gap-3 items-center border border-zinc-800 rounded-lg p-3 bg-zinc-900">
+                <img src={svc.img} alt={svc.name} className="w-14 h-14 object-cover rounded border border-zinc-700 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate">{svc.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-zinc-500">Cena:</span>
+                    <input
+                      type="text"
+                      value={servicePrices[svc.key] ?? svc.price}
+                      onChange={e => setServicePrices({ ...servicePrices, [svc.key]: e.target.value })}
+                      className="bg-zinc-800 border border-zinc-700 text-[#d4af37] text-sm px-2 py-1 rounded focus:outline-none focus:border-[#d4af37] w-32"
+                    />
+                  </div>
+                </div>
               </div>
             ))}
 
+            {services.length > 0 && (
+              <>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-600 pt-2">Tvoje usluge</p>
+                {services.map((svc, i) => (
+                  <div key={i} className="border border-zinc-800 rounded-lg p-4 bg-zinc-900 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-400 uppercase tracking-widest">Usluga {i + 1}</span>
+                      <button onClick={() => setServices(services.filter((_, idx) => idx !== i))}
+                        className="text-red-400 hover:text-red-300"><X size={14} /></button>
+                    </div>
+                    <LocalizedField label="Naziv" value={svc.name}
+                      onChange={v => { const s = [...services]; s[i] = { ...s[i], name: v }; setServices(s); }}
+                      onToast={showToast} />
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">Cena</label>
+                      <input type="text" value={svc.price}
+                        onChange={e => { const s = [...services]; s[i] = { ...s[i], price: e.target.value }; setServices(s); }}
+                        className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
+                    </div>
+                    <ImageUploader label="Slika" value={svc.image || ''}
+                      onChange={url => { const s = [...services]; s[i] = { ...s[i], image: url }; setServices(s); }}
+                      onToast={showToast} />
+                  </div>
+                ))}
+              </>
+            )}
+
             <button onClick={() => setServices([...services, { name: emptyLS(), price: '', image: '' }])}
               className="flex items-center gap-2 text-xs text-[#d4af37] hover:underline">
-              <Plus size={14} /> Dodaj uslugu
+              <Plus size={14} /> Dodaj novu uslugu
             </button>
-            <SaveBtn onClick={() => save({ services })} />
+            <SaveBtn onClick={() => save({ services, servicePrices })} />
           </div>
         )}
 
