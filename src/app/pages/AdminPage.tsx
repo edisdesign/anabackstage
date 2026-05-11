@@ -687,25 +687,36 @@ export const AdminPage = () => {
                           <p className="text-xs text-zinc-600">{post.date} {isOverridden && <span className="text-[#d4af37]">· izmenjen</span>}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          // Clone original post into admin-editable copy
-                          const clone: BlogPost = { ...post,
-                            title: { ...post.title },
-                            category: { ...post.category },
-                            content: { ...post.content },
-                          };
-                          if (isOverridden) {
-                            // Edit existing override
-                            setEditingPost(posts.find(p => p.id === post.id) || clone);
-                          } else {
-                            setEditingPost(clone);
-                          }
-                          setIsNewPost(false);
-                        }}
-                        className="p-2 text-zinc-500 hover:text-[#d4af37] transition-colors" title={isOverridden ? 'Izmeni' : 'Kopiraj i izmeni'}>
-                        {isOverridden ? <Edit2 size={14} /> : <Copy size={14} />}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            // Clone original post into admin-editable copy
+                            const clone: BlogPost = { ...post,
+                              title: { ...post.title },
+                              category: { ...post.category },
+                              content: { ...post.content },
+                            };
+                            if (isOverridden) {
+                              // Edit existing override
+                              setEditingPost(posts.find(p => p.id === post.id) || clone);
+                            } else {
+                              setEditingPost(clone);
+                            }
+                            setIsNewPost(false);
+                          }}
+                          className="p-2 text-zinc-500 hover:text-[#d4af37] transition-colors" title={isOverridden ? 'Izmeni' : 'Kopiraj i izmeni'}>
+                          {isOverridden ? <Edit2 size={14} /> : <Copy size={14} />}
+                        </button>
+                        {isOverridden && (
+                          <button onClick={async () => {
+                            if (!confirm('Obrisati izmene i vratiti na originalni post?')) return;
+                            const newPosts = posts.filter(p => p.id !== post.id);
+                            await save({ blogPosts: newPosts }); setPosts(newPosts);
+                          }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors" title="Obriši izmene">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
