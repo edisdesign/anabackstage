@@ -15,11 +15,12 @@ interface GitHubFile {
 
 async function getFileSha(path: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+    const res = await fetch(`${API_BASE}/contents/${path}?ref=${GITHUB_BRANCH}&t=${Date.now()}`, {
       headers: {
         Authorization: `token ${GITHUB_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
       },
+      cache: 'no-store'
     });
     if (!res.ok) return null;
     const data = await res.json();
