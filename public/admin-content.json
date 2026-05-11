@@ -9,5 +9,10 @@
   "blogPosts": [],
   "aboutImage": "",
   "aboutBio": { "sr": "", "en": "", "de": "" },
-  "galleryImages": []
+  "galleryImages": [],
+  "services": [],
+  "academyCertificate": {
+    "title": { "sr": "", "en": "", "de": "" },
+    "desc": { "sr": "", "en": "", "de": "" }
+  }
 }

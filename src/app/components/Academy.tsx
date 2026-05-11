@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAdminContent } from '@/app/context/AdminContentContext';
 import certificateImg from 'figma:asset/1c503511c89d045ac59026022b58cbca9b639121.png';
 import { StudentGallery } from '@/app/components/StudentGallery';
 
 export const Academy = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { adminContent } = useAdminContent();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+  const lang = i18n.language.split('-')[0] as 'sr' | 'en' | 'de';
+  const certTitle = adminContent.academyCertificate?.title?.[lang] || adminContent.academyCertificate?.title?.sr || t('academy.certificate_title');
+  const certDesc = adminContent.academyCertificate?.desc?.[lang] || adminContent.academyCertificate?.desc?.sr || t('academy.certificate_desc');
 
   const courses = [
     {
@@ -101,9 +107,9 @@ export const Academy = () => {
           
           <div className="grid md:grid-cols-2 gap-8 items-center p-8 md:p-12 border border-black/5 dark:border-white/5">
             <div>
-              <h3 className="text-2xl font-serif text-black dark:text-white mb-4">{t('academy.certificate_title')}</h3>
+              <h3 className="text-2xl font-serif text-black dark:text-white mb-4">{certTitle}</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                {t('academy.certificate_desc')}
+                {certDesc}
               </p>
               <div className="h-[1px] w-full bg-gradient-to-r from-[#d4af37] to-transparent mb-2" />
               <div className="h-[1px] w-2/3 bg-gradient-to-r from-[#d4af37] to-transparent" />

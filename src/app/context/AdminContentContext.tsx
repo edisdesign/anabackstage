@@ -15,12 +15,25 @@ export interface HeroContent {
   description: string;
 }
 
+export interface ServiceItem {
+  name: LocalizedString;
+  price: string;
+  image?: string;
+}
+
+export interface AcademyCertificate {
+  title: LocalizedString;
+  desc: LocalizedString;
+}
+
 export interface AdminContent {
   hero: HeroContent;
   blogPosts: BlogPost[];
   aboutImage: string;
   aboutBio: LocalizedString;
   galleryImages: string[];
+  services: ServiceItem[];
+  academyCertificate: AcademyCertificate;
 }
 
 interface AdminContentContextValue {
@@ -36,6 +49,11 @@ const defaultContent: AdminContent = {
   aboutImage: '',
   aboutBio: { sr: '', en: '', de: '' },
   galleryImages: [],
+  services: [],
+  academyCertificate: {
+    title: { sr: '', en: '', de: '' },
+    desc: { sr: '', en: '', de: '' },
+  },
 };
 
 const AdminContentContext = createContext<AdminContentContextValue>({
@@ -60,6 +78,8 @@ export const AdminContentProvider = ({ children }: { children: React.ReactNode }
           aboutImage: data.aboutImage || '',
           aboutBio: data.aboutBio || { sr: '', en: '', de: '' },
           galleryImages: data.galleryImages || [],
+          services: data.services || [],
+          academyCertificate: data.academyCertificate || defaultContent.academyCertificate,
         });
       }
     } catch { /* graceful fallback */ }

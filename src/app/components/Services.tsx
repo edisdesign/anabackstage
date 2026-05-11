@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Slider from 'react-slick';
 import { ArrowRight, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAdminContent } from '@/app/context/AdminContentContext';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 
@@ -17,6 +18,7 @@ import logoOverlay from "figma:asset/350a15eb137bc36685590f4ef187dc66e3f1cde7.pn
 
 export const Services = () => {
   const { t, i18n } = useTranslation();
+  const { adminContent } = useAdminContent();
   const sliderRef = useRef<Slider>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [priceListOpen, setPriceListOpen] = useState(false);
@@ -46,44 +48,25 @@ export const Services = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const services = [
-    {
-      name: t('services.makeup_classic'),
-      price: "3500 din",
-      image: classicMakeupImg,
-      gallery: [classicMakeupImg]
-    },
-    {
-      name: t('services.makeup_special'),
-      price: "6000 din",
-      image: specialOccasionImg,
-      gallery: [specialOccasionImg]
-    },
-    {
-      name: t('services.hijab_styling'),
-      price: "3000 din",
-      image: hijabStylingImg,
-      gallery: [hijabStylingImg]
-    },
-    {
-      name: t('services.hair_classic'),
-      price: "1000 - 2000 din",
-      image: classicHairImg,
-      gallery: [classicHairImg]
-    },
-    {
-      name: t('services.hair_special'),
-      price: "2000 - 5000 din",
-      image: specialHairImg,
-      gallery: [specialHairImg]
-    },
-    {
-      name: t('services.hair_waves'),
-      price: "1000 - 2500 din",
-      image: hairWavesImg,
-      gallery: [hairWavesImg]
-    }
+  const lang = i18n.language.split('-')[0] as 'sr' | 'en' | 'de';
+
+  const originalServices = [
+    { name: t('services.makeup_classic'), price: "3500 din", image: classicMakeupImg, gallery: [classicMakeupImg] },
+    { name: t('services.makeup_special'), price: "6000 din", image: specialOccasionImg, gallery: [specialOccasionImg] },
+    { name: t('services.hijab_styling'), price: "3000 din", image: hijabStylingImg, gallery: [hijabStylingImg] },
+    { name: t('services.hair_classic'), price: "1000 - 2000 din", image: classicHairImg, gallery: [classicHairImg] },
+    { name: t('services.hair_special'), price: "2000 - 5000 din", image: specialHairImg, gallery: [specialHairImg] },
+    { name: t('services.hair_waves'), price: "1000 - 2500 din", image: hairWavesImg, gallery: [hairWavesImg] },
   ];
+
+  const adminServices = (adminContent.services || []).map(s => ({
+    name: s.name[lang] || s.name.sr || '',
+    price: s.price,
+    image: s.image || classicMakeupImg,
+    gallery: [s.image || classicMakeupImg],
+  }));
+
+  const services = [...originalServices, ...adminServices];
 
   const settings = {
     dots: true,

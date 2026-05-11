@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { commitFile, uploadImage } from '@/lib/githubApi';
-import { useAdminContent, AdminContent, LocalizedString } from '@/app/context/AdminContentContext';
+import { useAdminContent, AdminContent, LocalizedString, ServiceItem, AcademyCertificate } from '@/app/context/AdminContentContext';
 import { BlogPost, blogPosts as originalPosts } from '@/app/data/blogPosts';
 import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages, Copy } from 'lucide-react';
 
@@ -141,7 +141,7 @@ export const AdminPage = () => {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === '1');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'omeni' | 'galerija' | 'usluge' | 'akademija' | 'blog'>('hero');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -150,6 +150,8 @@ export const AdminPage = () => {
   const [aboutImage, setAboutImage] = useState(adminContent.aboutImage);
   const [aboutBio, setAboutBio] = useState<LocalizedString>(adminContent.aboutBio || emptyLS());
   const [galleryImages, setGalleryImages] = useState<string[]>(adminContent.galleryImages || []);
+  const [services, setServices] = useState<ServiceItem[]>(adminContent.services || []);
+  const [academyCert, setAcademyCert] = useState<AcademyCertificate>(adminContent.academyCertificate);
   const [posts, setPosts] = useState<BlogPost[]>(adminContent.blogPosts || []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [isNewPost, setIsNewPost] = useState(false);
@@ -157,7 +159,6 @@ export const AdminPage = () => {
   useEffect(() => {
     setHero(adminContent.hero);
     setAboutImage(adminContent.aboutImage || '');
-    // Pre-populate bio with existing i18n text if admin hasn't set anything yet
     const existingBio = adminContent.aboutBio;
     if (!existingBio?.sr) {
       setAboutBio({
@@ -169,6 +170,8 @@ export const AdminPage = () => {
       setAboutBio(existingBio);
     }
     setGalleryImages(adminContent.galleryImages || []);
+    setServices(adminContent.services || []);
+    setAcademyCert(adminContent.academyCertificate);
     setPosts(adminContent.blogPosts || []);
   }, [adminContent]);
 
@@ -181,6 +184,7 @@ export const AdminPage = () => {
     setSaving(true);
     const content: AdminContent = {
       hero, blogPosts: posts, aboutImage, aboutBio, galleryImages,
+      services, academyCertificate: academyCert,
       ...overrides,
     };
     const result = await commitFile(
@@ -231,10 +235,14 @@ export const AdminPage = () => {
     );
   }
 
+  type Tab = 'hero' | 'omeni' | 'galerija' | 'usluge' | 'akademija' | 'blog';
+
   const tabs: { key: Tab; label: string }[] = [
     { key: 'hero', label: '🖼️ Hero' },
     { key: 'omeni', label: '👤 O meni' },
     { key: 'galerija', label: '🎓 Galerija' },
+    { key: 'usluge', label: '💅 Usluge' },
+    { key: 'akademija', label: '🏆 Akademija' },
     { key: 'blog', label: '📝 Blog' },
   ];
 
@@ -354,6 +362,69 @@ export const AdminPage = () => {
                 onToast={showToast} />
             </div>
             <SaveBtn onClick={() => save({ galleryImages })} />
+          </div>
+        )}
+
+        {/* ── USLUGE ── */}
+        {activeTab === 'usluge' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-serif mb-1">Usluge Salona</h2>
+              <p className="text-zinc-500 text-xs">
+                Dodaj nove usluge ili izmeni cene. Originalne 6 usluga uvek ostaju — ovde dodaješ na listu.
+                <br /><span className="text-zinc-600">Zakaži dugme → WhatsApp se ne dira.</span>
+              </p>
+            </div>
+
+            {services.map((svc, i) => (
+              <div key={i} className="border border-zinc-800 rounded-lg p-4 bg-zinc-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400 uppercase tracking-widest">Usluga {i + 1}</span>
+                  <button onClick={() => setServices(services.filter((_, idx) => idx !== i))}
+                    className="text-red-400 hover:text-red-300"><X size={14} /></button>
+                </div>
+                <LocalizedField label="Naziv usluge" value={svc.name}
+                  onChange={v => { const s = [...services]; s[i] = { ...s[i], name: v }; setServices(s); }}
+                  onToast={showToast} />
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1">Cena</label>
+                  <input type="text" value={svc.price}
+                    onChange={e => { const s = [...services]; s[i] = { ...s[i], price: e.target.value }; setServices(s); }}
+                    placeholder="npr. 3500 din"
+                    className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-[#d4af37]" />
+                </div>
+                <ImageUploader label="Slika (opciono)" value={svc.image || ''}
+                  onChange={url => { const s = [...services]; s[i] = { ...s[i], image: url }; setServices(s); }}
+                  onToast={showToast} />
+              </div>
+            ))}
+
+            <button onClick={() => setServices([...services, { name: emptyLS(), price: '', image: '' }])}
+              className="flex items-center gap-2 text-xs text-[#d4af37] hover:underline">
+              <Plus size={14} /> Dodaj uslugu
+            </button>
+            <SaveBtn onClick={() => save({ services })} />
+          </div>
+        )}
+
+        {/* ── AKADEMIJA ── */}
+        {activeTab === 'akademija' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-serif mb-1">Akademija — Sertifikat</h2>
+              <p className="text-zinc-500 text-xs">
+                Izmeni tekst koji se prikazuje pored slike sertifikata. Kursevi i Zakaži dugme se ne diraju.
+              </p>
+            </div>
+            <LocalizedField label="Naslov sertifikata"
+              value={academyCert.title}
+              onChange={v => setAcademyCert({ ...academyCert, title: v })}
+              onToast={showToast} />
+            <LocalizedField label="Opis sertifikata"
+              value={academyCert.desc}
+              onChange={v => setAcademyCert({ ...academyCert, desc: v })}
+              multiline onToast={showToast} />
+            <SaveBtn onClick={() => save({ academyCertificate: academyCert })} />
           </div>
         )}
 
