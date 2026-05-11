@@ -45,9 +45,13 @@ const HomePage = () => (
 );
 
 const App = () => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    return window.location.pathname !== '/admin';
+  });
 
   useEffect(() => {
+    if (window.location.pathname === '/admin') return;
+    
     // Simulate loading time (e.g., waiting for fonts/images)
     const timer = setTimeout(() => {
       setLoading(false);
