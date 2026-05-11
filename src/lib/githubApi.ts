@@ -117,8 +117,8 @@ export async function uploadImage(
       return { success: false, error: err.message || 'Upload greška' };
     }
 
-    // Return the raw GitHub URL for the image
-    const imageUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${path.replace('public/', '')}`;
+    // Return the relative Vercel URL for the image
+    const imageUrl = `/admin-images/${filename}`;
     return { success: true, url: imageUrl };
   } catch (e) {
     return { success: false, error: String(e) };
