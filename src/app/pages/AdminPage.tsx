@@ -326,10 +326,15 @@ export const AdminPage = () => {
 
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 border-b border-zinc-800">
+        <div className="flex gap-1 mb-8 border-b border-zinc-800 overflow-x-auto whitespace-nowrap" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .overflow-x-auto::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
           {tabs.map(t => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
-              className={`px-5 py-3 text-xs uppercase tracking-widest font-bold transition-colors border-b-2 -mb-px ${
+              className={`px-5 py-3 text-xs uppercase tracking-widest font-bold transition-colors border-b-2 -mb-px flex-shrink-0 ${
                 activeTab === t.key ? 'border-[#d4af37] text-[#d4af37]' : 'border-transparent text-zinc-500 hover:text-white'
               }`}>{t.label}</button>
           ))}
