@@ -6,29 +6,7 @@
     "beauty": "",
     "description": "Od suptilne dnevne elegancije do glamuroznog večernjeg sjaja. Prepustite se stručnim rukama koje ističu vašu prirodnu lepotu."
   },
-  "blogPosts": [
-    {
-      "id": "post-1778509771146-2iyuc",
-      "image": "https://raw.githubusercontent.com/edisdesign/anabackstage/main/admin-images/1778509935007-de4ad044f6d8f2d0167015b90421f7849c5ce5c4.png",
-      "video": "https://www.youtube.com/watch?v=VdgWfdkIGn0",
-      "date": "2026-05-11",
-      "title": {
-        "sr": "stvarno",
-        "en": "",
-        "de": ""
-      },
-      "category": {
-        "sr": "gde me nadje",
-        "en": "where to find me",
-        "de": "wo Sie mich finden können"
-      },
-      "content": {
-        "sr": "dosta dobar auto",
-        "en": "Pretty good.",
-        "de": "gut genug Auto"
-      }
-    }
-  ],
+  "blogPosts": [],
   "aboutImage": "",
   "aboutBio": {
     "sr": "Ana Muratović – nežna ruka iza snažne lepote. Makeup & Hijab artist koja još od trinaeste godine kroz šminku, kosu i hijab ističe prirodnu ženstvenost. Kreatorka lepote, mentorka budućih umetnica i osnivač škole šminkanja sa individualnim pristupom svakoj učenici. Suptilno, elegantno i sa dušom.\n\nNjen pristup nije samo nanošenje šminke, već razumevanje geometrije lica — filozofija koju prenosi svakom studentu na svojoj akademiji.",

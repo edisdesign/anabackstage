@@ -711,7 +711,6 @@ export const AdminPage = () => {
                           <button onClick={async (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (!window.confirm('Obrisati izmene i vratiti na originalni post?')) return;
                             const newPosts = posts.filter(p => p.id !== post.id);
                             await save({ blogPosts: newPosts }); setPosts(newPosts);
                           }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors" title="Obriši izmene">
@@ -747,7 +746,6 @@ export const AdminPage = () => {
                   <button onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (!window.confirm('Obrisati?')) return;
                     const newPosts = posts.filter(p => p.id !== post.id);
                     await save({ blogPosts: newPosts }); setPosts(newPosts);
                   }} className="p-2 text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button>
