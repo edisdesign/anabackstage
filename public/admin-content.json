@@ -9,8 +9,8 @@
   "blogPosts": [
     {
       "id": "post-1778509771146-2iyuc",
-      "image": "https://raw.githubusercontent.com/edisdesign/anabackstage/main/admin-images/1778509935007-de4ad044f6d8f2d0167015b90421f7849c5ce5c4.png",
-      "video": "https://www.youtube.com/watch?v=VdgWfdkIGn0",
+      "image": "",
+      "video": "",
       "date": "2026-05-11",
       "title": {
         "sr": "stvarno",
@@ -18,12 +18,12 @@
         "de": ""
       },
       "category": {
-        "sr": "gde me nadje",
+        "sr": "",
         "en": "where to find me",
         "de": "wo Sie mich finden können"
       },
       "content": {
-        "sr": "dosta dobar auto",
+        "sr": "",
         "en": "Pretty good.",
         "de": "gut genug Auto"
       }
