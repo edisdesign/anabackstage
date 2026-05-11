@@ -205,6 +205,9 @@ export const AdminPage = () => {
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+        <a href="/" className="absolute top-6 right-6 p-2 text-zinc-600 hover:text-white transition-colors" title="Nazad na sajt">
+          <X size={20} />
+        </a>
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <p className="text-[#d4af37] text-xs uppercase tracking-[0.4em] mb-2">Ana Backstage</p>
