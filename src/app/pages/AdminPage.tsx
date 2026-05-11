@@ -708,8 +708,10 @@ export const AdminPage = () => {
                           {isOverridden ? <Edit2 size={14} /> : <Copy size={14} />}
                         </button>
                         {isOverridden && (
-                          <button onClick={async () => {
-                            if (!confirm('Obrisati izmene i vratiti na originalni post?')) return;
+                          <button onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!window.confirm('Obrisati izmene i vratiti na originalni post?')) return;
                             const newPosts = posts.filter(p => p.id !== post.id);
                             await save({ blogPosts: newPosts }); setPosts(newPosts);
                           }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors" title="Obriši izmene">
@@ -740,10 +742,12 @@ export const AdminPage = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setEditingPost({ ...post }); setIsNewPost(false); }}
+                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingPost({ ...post }); setIsNewPost(false); }}
                     className="p-2 text-zinc-400 hover:text-[#d4af37]"><Edit2 size={14} /></button>
-                  <button onClick={async () => {
-                    if (!confirm('Obrisati?')) return;
+                  <button onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!window.confirm('Obrisati?')) return;
                     const newPosts = posts.filter(p => p.id !== post.id);
                     await save({ blogPosts: newPosts }); setPosts(newPosts);
                   }} className="p-2 text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button>
@@ -753,6 +757,7 @@ export const AdminPage = () => {
           </div>
         )}
       </div>
+
 
       {toast && <Toast {...toast} />}
     </div>
