@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { commitFile, uploadImage } from '@/lib/githubApi';
 import { useAdminContent, AdminContent, LocalizedString } from '@/app/context/AdminContentContext';
-import { BlogPost } from '@/app/data/blogPosts';
-import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages } from 'lucide-react';
+import { BlogPost, blogPosts as originalPosts } from '@/app/data/blogPosts';
+import { LogOut, Plus, Edit2, Trash2, Save, Eye, EyeOff, Upload, X, Loader2, Languages, Copy } from 'lucide-react';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'anabackstage2024';
 const SESSION_KEY = 'ab_admin_session';
@@ -157,7 +157,17 @@ export const AdminPage = () => {
   useEffect(() => {
     setHero(adminContent.hero);
     setAboutImage(adminContent.aboutImage || '');
-    setAboutBio(adminContent.aboutBio || emptyLS());
+    // Pre-populate bio with existing i18n text if admin hasn't set anything yet
+    const existingBio = adminContent.aboutBio;
+    if (!existingBio?.sr) {
+      setAboutBio({
+        sr: 'Ana Muratović – nežna ruka iza snažne lepote. Makeup & Hijab artist koja još od trinaeste godine kroz šminku, kosu i hijab ističe prirodnu ženstvenost. Kreatorka lepote, mentorka budućih umetnica i osnivač škole šminkanja sa individualnim pristupom svakoj učenici. Suptilno, elegantno i sa dušom.\n\nNjen pristup nije samo nanošenje šminke, već razumevanje geometrije lica — filozofija koju prenosi svakom studentu na svojoj akademiji.',
+        en: 'Ana Muratović – a gentle hand behind strong beauty. A Makeup & Hijab artist who, since the age of thirteen, has been highlighting natural femininity through makeup, hair, and hijab. A creator of beauty, mentor to future artists, and founder of a makeup school with an individual approach to every student. Subtle, elegant, and with soul.\n\nHer approach is not just about application, but about understanding the geometry of the face—a philosophy she imparts to every student at her academy.',
+        de: 'Ana Muratović – eine sanfte Hand hinter starker Schönheit. Eine Make-up- & Hidschab-Künstlerin, die seit ihrem dreizehnten Lebensjahr durch Make-up, Haare und Hidschab die natürliche Weiblichkeit hervorhebt. Eine Schöpferin der Schönheit, Mentorin zukünftiger Künstlerinnen und Gründerin einer Make-up-Schule. Subtil, elegant und mit Seele.\n\nIhr Ansatz besteht nicht nur im Auftragen, sondern im Verständnis der Geometrie des Gesichts.',
+      });
+    } else {
+      setAboutBio(existingBio);
+    }
     setGalleryImages(adminContent.galleryImages || []);
     setPosts(adminContent.blogPosts || []);
   }, [adminContent]);
@@ -353,7 +363,9 @@ export const AdminPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-serif mb-1">Blog Postovi</h2>
-                <p className="text-zinc-500 text-xs">6 originalnih + {posts.length} tvojih postova. Piši na srpskom, klikni "Auto-prevedi".</p>
+                <p className="text-zinc-500 text-xs">
+                  {originalPosts.length} originalna + {posts.length} tvojih. Klikni ✏️ na originalnom da ga kopiraš i izmeniš.
+                </p>
               </div>
               <button onClick={() => { setEditingPost(emptyPost()); setIsNewPost(true); }}
                 className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] hover:bg-[#c4a030] text-black text-xs font-bold uppercase tracking-widest rounded transition-colors">
@@ -414,13 +426,55 @@ export const AdminPage = () => {
               </div>
             )}
 
-            {posts.length === 0 && !editingPost && (
-              <div className="text-center py-12 text-zinc-600 border border-zinc-800 rounded-lg">
-                <p className="text-sm">Nema tvojih postova. Klikni "+ Novi post".</p>
+            {/* Original posts — read-only with Clone to Edit */}
+            {!editingPost && (
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-600 pt-2">Originalni postovi (klikni ✏️ da izmeniš)</p>
+                {originalPosts.map(post => {
+                  const isOverridden = posts.some(p => p.id === post.id);
+                  return (
+                    <div key={post.id} className={`flex items-center justify-between px-4 py-3 border rounded-lg ${
+                      isOverridden ? 'border-[#d4af37]/30 bg-[#d4af37]/5' : 'border-zinc-800 bg-zinc-900'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="text-sm text-zinc-300 line-clamp-1">{post.title.sr || post.title.en}</p>
+                          <p className="text-xs text-zinc-600">{post.date} {isOverridden && <span className="text-[#d4af37]">· izmenjen</span>}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // Clone original post into admin-editable copy
+                          const clone: BlogPost = { ...post,
+                            title: { ...post.title },
+                            category: { ...post.category },
+                            content: { ...post.content },
+                          };
+                          if (isOverridden) {
+                            // Edit existing override
+                            setEditingPost(posts.find(p => p.id === post.id) || clone);
+                          } else {
+                            setEditingPost(clone);
+                          }
+                          setIsNewPost(false);
+                        }}
+                        className="p-2 text-zinc-500 hover:text-[#d4af37] transition-colors" title={isOverridden ? 'Izmeni' : 'Kopiraj i izmeni'}>
+                        {isOverridden ? <Edit2 size={14} /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {posts.map(post => (
+            {/* Admin posts */}
+            {posts.length === 0 && !editingPost && (
+              <div className="text-center py-8 text-zinc-700 text-xs">
+                Nema tvojih novih postova.
+              </div>
+            )}
+
+            {!editingPost && posts.filter(p => !originalPosts.some(op => op.id === p.id)).map(post => (
               <div key={post.id} className="flex items-center justify-between px-4 py-3 border border-zinc-800 rounded-lg bg-zinc-900">
                 <div className="flex items-center gap-3">
                   {post.image && <img src={post.image} alt="" className="w-10 h-10 object-cover rounded" />}
