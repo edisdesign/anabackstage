@@ -89,7 +89,12 @@ export const Footer = () => {
 
         <div className="py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-700">
           <p>&copy; {new Date().getFullYear()} Ana Muratović. {t('footer.rights')}</p>
-          <div className="flex gap-8">
+          <div className="flex items-center gap-8">
+            <a
+              href="/admin"
+              className="opacity-60 hover:opacity-100 transition-opacity text-gray-700 hover:text-white text-base leading-none tracking-tighter select-none"
+              title=""
+            >···</a>
             <button onClick={() => window.dispatchEvent(new CustomEvent('open-legal', { detail: 'privacy' }))} className="hover:text-white transition-colors cursor-pointer">{t('footer.privacy')}</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('open-legal', { detail: 'impresum' }))} className="hover:text-white transition-colors cursor-pointer">{t('footer.impresum')}</button>
           </div>
